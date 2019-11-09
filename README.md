@@ -1,2 +1,2 @@
-# quack
-An interface driven cli library for go
+# shellby
+Interface driven cli lib for go
