@@ -40,7 +40,7 @@ func (l *ls) Default() {
 }
 
 func (l *ls) Validate() error {
-	if l.Path == "idiot" {
+	if l.Path == "wrong" {
 		return fmt.Errorf("%s is not a valid path", l.Path)
 	}
 	return nil
