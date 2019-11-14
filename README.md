@@ -1,6 +1,6 @@
 # quack
 
-[![GoDoc](https://godoc.org/github.com/eliothedeman/quack?status.svg)](https://godoc.org/github.com/eliothedeman/quack)
+![GoDoc](https://godoc.org/github.com/eliothedeman/quack?status.svg)
 ![Test](https://github.com/eliothedeman/quack/workflows/Test/badge.svg)
 
 An interface driven cli lib for go.
