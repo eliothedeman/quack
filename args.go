@@ -216,3 +216,11 @@ func hasHelpArg(args []string, shortHelp bool) bool {
 func helpError(name string, u Unit) error {
 	return errors.New(fmtHelp(name, u))
 }
+
+func keys(m map[string]Unit) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	return out
+}

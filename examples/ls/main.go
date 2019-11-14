@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/eliothedeman/quack"
 )
@@ -58,5 +59,9 @@ func (l ls) Run([]string) {
 }
 
 func main() {
-	quack.RunGroup("example", new(cmds))
+	quack.Run(
+		"example",
+		quack.WithArgs(os.Args),
+		quack.WithGroup(new(cmds)),
+	)
 }

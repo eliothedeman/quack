@@ -27,17 +27,36 @@ func (t *TRoot) SubCommands() map[string]Unit {
 
 func TestRunGroup(t *testing.T) {
 	r := &TRoot{}
-	os.Args = []string{"bin", "hello", "--name", "wilson"}
-	RunGroup("test", r)
+	Run("test", WithGroup(r), WithArgs(
+		[]string{"hello", "--name", "wilson"},
+	))
 
 	if r.t.Called != true {
 		t.Fatal()
 	}
 }
+
+func TestRunGroupWithOSArgs(t *testing.T) {
+	r := &TRoot{}
+
+	os.Args = []string{"./mycmd", "hello", "--name", "not-wison"}
+	Run("test", WithGroup(r), WithArgs(
+		[]string{"hello", "--name", "wilson"},
+	))
+
+	if r.t.Name == "not-wilson" {
+		t.Errorf("r.t.Name == not-wilson")
+	}
+
+	if r.t.Called != true {
+		t.Fatal()
+	}
+}
+
 func TestRunCommand(t *testing.T) {
 	r := &TSub{}
-	os.Args = []string{"bin", "hello", "--name", "wilson"}
-	RunCommand("test", r)
+	os.Args = []string{"./bin", "hello", "--name", "wilson"}
+	Run("test", WithCommand(r))
 
 	if r.Called != true {
 		t.Fatal()
