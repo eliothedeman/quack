@@ -2,6 +2,39 @@
 
 An interface driven cli lib for go.
 
+## Overview
+
+Have you ever said
+
+> Why can't writing CLIs be as easy as defining a struct and writing a function?
+
+Then quack is for you.
+
+### A simple command
+
+_main.go_
+
+```go
+type ToHex struct {
+	Input int
+}
+
+func (t ToHex) Run([]args) {
+	fmt.Printf("%x", t.Input)
+}
+
+func main() {
+	quack.Run("tohex", quack.WithCommand(&ToHex{}))
+}
+```
+
+Can now be run
+
+```
+go run main.go --input 12334
+302e
+```
+
 ## Interfaces
 
 Quack uses interfaces to let you specialize the behavior of your cli. This lets you use as much or as little of the library as you want.
@@ -111,6 +144,9 @@ func (l ls) Run([]string) {
 }
 
 func main() {
-	quack.RunGroup("example", new(cmds))
+	quack.Run(
+		"example",
+		quack.WithGroup(new(cmds))
+	)
 }
 ```
