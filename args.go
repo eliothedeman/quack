@@ -25,12 +25,13 @@ func fieldNameToArg(f string) string {
 func setFlag(v reflect.Value, f reflect.StructField, fs *pflag.FlagSet) {
 	t := f.Tag
 	help := t.Get("help")
-	intVal, _ := strconv.Atoi(t.Get("default"))
-	floatVal, _ := strconv.ParseFloat(t.Get("default"), 64)
-	durationVal, _ := time.ParseDuration(t.Get("default"))
+	strVal := t.Get("default")
+	intVal, _ := strconv.Atoi(strVal)
+	floatVal, _ := strconv.ParseFloat(strVal, 64)
+	durationVal, _ := time.ParseDuration(strVal)
 	short := t.Get("short")
 	hasShort := short != ""
-	boolVal := t.Get("default") == "true"
+	boolVal := strVal == "true"
 	argName := fieldNameToArg(f.Name)
 	addr := v.Addr().Interface()
 	rawAddr := unsafe.Pointer(v.UnsafeAddr())
@@ -124,9 +125,9 @@ func setFlag(v reflect.Value, f reflect.StructField, fs *pflag.FlagSet) {
 		}
 	case reflect.String:
 		if hasShort {
-			fs.StringVarP((*string)(rawAddr), argName, short, t.Get("default"), help)
+			fs.StringVarP((*string)(rawAddr), argName, short, strVal, help)
 		} else {
-			fs.StringVar((*string)(rawAddr), argName, t.Get("default"), help)
+			fs.StringVar((*string)(rawAddr), argName, strVal, help)
 		}
 	default:
 		log.Panicf("Unable to handle type set flags for %v", f)
