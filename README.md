@@ -44,16 +44,13 @@ Struct tags can be used to customize the parsing of arguments.
 
 ### Supported tags
 
--   long
-    -   Change the long form of flag name. This will default to the `kebab case` version of the field name on a struct
--   short
-    -   Add a short version of your flag name. Will start with a single `-` instead of `--`
--   default
-    -   The default value to be used for this flag if it is not provided.
--   help
-    -   Help text for this flag
--   ignore
-    -   Don't add this field to the set of flags to be parsed
+| tag     | meaning                                                                                                     |
+| ------- | ----------------------------------------------------------------------------------------------------------- |
+| long    | Change the long form of flag name.This will default to the kebab case version of the field name on a struct |
+| short   | Add a short version of your flag name. Will start with a single '-' instead of '--'                         |
+| default | The default value to be used for this flag if it is not provided.                                           |
+| help    | Help text for this flag                                                                                     |
+| ignore  | Don't add this field to the set of flags to be parsed                                                       |
 
 ## Interfaces
 
