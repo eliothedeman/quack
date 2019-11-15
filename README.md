@@ -38,6 +38,23 @@ go run main.go --input 12334
 302e
 ```
 
+## Tags
+
+Struct tags can be used to customize the parsing of arguments.
+
+### Supported tags
+
+-   long
+    -   Change the long form of flag name. This will default to the `kebab case` version of the field name on a struct
+-   short
+    -   Add a short version of your flag name. Will start with a single `-` instead of `--`
+-   default
+    -   The default value to be used for this flag if it is not provided.
+-   help
+    -   Help text for this flag
+-   ignore
+    -   Don't add this field to the set of flags to be parsed
+
 ## Interfaces
 
 Quack uses interfaces to let you specialize the behavior of your cli. This lets you use as much or as little of the library as you want.

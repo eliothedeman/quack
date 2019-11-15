@@ -15,6 +15,14 @@ import (
 	"github.com/spf13/pflag"
 )
 
+const (
+	helpTag    = "help"
+	defaultTag = "default"
+	shortTag   = "short"
+	longTag    = "long"
+	ignoreTag  = "ignore"
+)
+
 // filedNameToArg formats a filed name to it's name as cli arg.
 func fieldNameToArg(f string) string {
 	return strcase.ToKebab(f)
@@ -24,15 +32,18 @@ func fieldNameToArg(f string) string {
 // I don't like it, but I don't see a better way.
 func setFlag(v reflect.Value, f reflect.StructField, fs *pflag.FlagSet) {
 	t := f.Tag
-	help := t.Get("help")
-	strVal := t.Get("default")
+	help := t.Get(helpTag)
+	strVal := t.Get(defaultTag)
 	intVal, _ := strconv.Atoi(strVal)
 	floatVal, _ := strconv.ParseFloat(strVal, 64)
 	durationVal, _ := time.ParseDuration(strVal)
-	short := t.Get("short")
+	short := t.Get(shortTag)
 	hasShort := short != ""
 	boolVal := strVal == "true"
-	argName := fieldNameToArg(f.Name)
+	argName := t.Get(longTag)
+	if argName == "" {
+		argName = fieldNameToArg(f.Name)
+	}
 	addr := v.Addr().Interface()
 	rawAddr := unsafe.Pointer(v.UnsafeAddr())
 	switch v.Kind() {
@@ -146,7 +157,7 @@ func getFlags(name string, c Command) *pflag.FlagSet {
 		}
 
 		// respect the ignore flag
-		if val, ok := sf.Tag.Lookup("ignore"); ok {
+		if val, ok := sf.Tag.Lookup(ignoreTag); ok {
 			if val != "false" {
 				return false
 			}
@@ -165,6 +176,10 @@ func fmtHelp(name string, u Unit) string {
 	case Command:
 		fmt.Fprintf(&b, "Usage:    %s [args]\n", name)
 		f := getFlags("", u)
+		if h, ok := u.(Helper); ok {
+			b.WriteString(h.Help())
+			b.WriteByte('\n')
+		}
 		b.WriteString(f.FlagUsages())
 
 	case Group:
