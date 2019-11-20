@@ -149,6 +149,9 @@ func getFlags(name string, c Command) *pflag.FlagSet {
 	fs := pflag.NewFlagSet(name, pflag.ContinueOnError)
 	v := reflect.Indirect(reflect.ValueOf(c))
 	t := v.Type()
+	if t.Kind() != reflect.Struct {
+		return fs
+	}
 	v.FieldByNameFunc(func(s string) bool {
 		f := v.FieldByName(s)
 		sf, ok := t.FieldByName(s)
