@@ -4,27 +4,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 
 	"github.com/eliothedeman/quack"
 )
 
-var (
-	_ quack.Group   = new(cmds)
-	_ quack.Command = new(ls)
-)
-
-type cmds struct {
-}
-
-func (c cmds) Help() string {
-	return "A collection of commands"
-}
-
-func (c cmds) SubCommands() map[string]quack.Unit {
-	return map[string]quack.Unit{
-		"ls": new(ls),
-	}
+var root = quack.Map{
+	"ls": &ls{},
 }
 
 type ls struct {
@@ -61,7 +46,6 @@ func (l ls) Run([]string) {
 func main() {
 	quack.Run(
 		"example",
-		quack.WithArgs(os.Args),
-		quack.WithGroup(new(cmds)),
+		quack.WithGroup(root),
 	)
 }

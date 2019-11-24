@@ -4,7 +4,7 @@ import "testing"
 
 func TestBasicCommand(t *testing.T) {
 	called := false
-	Run("test", WithCommand(CommandFunc(func([]string) {
+	Run("test", WithCommand(Func(func([]string) {
 		called = true
 	})))
 	if !called {
@@ -14,8 +14,8 @@ func TestBasicCommand(t *testing.T) {
 
 func TestCommandFunc(t *testing.T) {
 	called := false
-	Run("test", WithGroup(CommandMap{
-		"my_name": CommandFunc(func([]string) {
+	Run("test", WithGroup(Map{
+		"my_name": Func(func([]string) {
 			called = true
 		}),
 	}),

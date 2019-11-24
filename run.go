@@ -57,6 +57,10 @@ func Run(name string, opts ...Option) {
 
 // run a command or find a subcommand
 func run(name string, u Unit, raw []string) error {
+	err := validateUnit(u)
+	if err != nil {
+		return err
+	}
 
 	switch u := u.(type) {
 	case Command:
@@ -84,7 +88,7 @@ func run(name string, u Unit, raw []string) error {
 		u.Run(raw)
 	case Group:
 
-		if hasHelpArg(raw, false) || len(raw) == 0 {
+		if hasHelpArg(raw, len(raw) == 1) || len(raw) == 0 {
 			return helpError(name, u)
 		}
 		subs := u.SubCommands()

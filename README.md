@@ -38,6 +38,28 @@ go run main.go --input 12334
 302e
 ```
 
+### A simple set of sub commands
+
+_main.go_
+
+```go
+var root = quack.Map{
+	"build":	builtin.Build,
+	"test": 	builtin.Test,
+}
+
+func main() {
+	quack.Run("go", quack.WithGroup(root))
+}
+```
+
+```
+go run main.go -h
+Usage: go <cmd> [args]
+	build 	"build go source files"
+	test 	"test go source files"
+```
+
 ## Tags
 
 Struct tags can be used to customize the parsing of arguments.

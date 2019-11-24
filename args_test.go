@@ -17,7 +17,7 @@ func (*testFmtStruct) Run([]string) {
 type testFmtSub struct {
 }
 
-func (*testFmtSub) SubCommands() map[string]Unit {
+func (*testFmtSub) SubCommands() Map {
 	return map[string]Unit{
 		"testin": &testFmtStruct{},
 		"test2":  &testFmtStruct{},

@@ -19,8 +19,8 @@ func (t *TSub) Run([]string) {
 	t.Called = true
 }
 
-func (t *TRoot) SubCommands() map[string]Unit {
-	return map[string]Unit{
+func (t *TRoot) SubCommands() Map {
+	return Map{
 		"hello": &t.t,
 	}
 }
@@ -213,5 +213,14 @@ func TestValidator(t *testing.T) {
 	err = run("valid", v, []string{"--val", "yup"})
 	if err != nil {
 		t.Errorf("Unexpected error %s", err)
+	}
+}
+
+func TestValidateUnit(t *testing.T) {
+	err := run("bad", WithGroup(Map{
+		"bad_cmd": 10,
+	}), []string{})
+	if !errors.Is(err, ErrWrongType) {
+		t.Errorf("[%s] is wrong type of error", err)
 	}
 }
