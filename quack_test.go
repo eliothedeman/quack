@@ -11,8 +11,9 @@ type TRoot struct {
 }
 
 type TSub struct {
-	Name   string
-	Called bool
+	Name    string
+	Called  bool
+	private int
 }
 
 func (t *TSub) Run([]string) {

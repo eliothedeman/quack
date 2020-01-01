@@ -159,6 +159,11 @@ func getFlags(name string, c Command) *pflag.FlagSet {
 			panic("wtf")
 		}
 
+		// check if unexported
+		if sf.PkgPath != "" {
+			return false
+		}
+
 		// respect the ignore flag
 		if val, ok := sf.Tag.Lookup(ignoreTag); ok {
 			if val != "false" {
