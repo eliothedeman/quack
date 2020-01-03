@@ -8,14 +8,33 @@ func (f Func) Run(args []string) {
 	f(args)
 }
 
+type helpWrapper string
+
+func (h helpWrapper) Help() string {
+	return string(h)
+}
+
+type funcWithHelp struct {
+	Func
+	helpWrapper
+}
+
+// WithHelp creates a wrapper that has a help function for the function
+func (f Func) WithHelp(help string) Command {
+	return funcWithHelp{
+		Func:        f,
+		helpWrapper: helpWrapper(help),
+	}
+}
+
 // Map is a wrapper around a group of commands. No Need to define a struct
 type Map map[string]Unit
 
 // WithHelp will return the map with a "Helper" interface attached
 func (m Map) WithHelp(help string) Group {
 	return &mapWithHelp{
-		Map:  m,
-		help: help,
+		Map:         m,
+		helpWrapper: helpWrapper(help),
 	}
 }
 
@@ -26,9 +45,5 @@ func (m Map) SubCommands() Map {
 
 type mapWithHelp struct {
 	Map
-	help string
-}
-
-func (m *mapWithHelp) Help() string {
-	return m.help
+	helpWrapper
 }
