@@ -1,6 +1,7 @@
 package quack
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
@@ -26,14 +27,12 @@ func (*testFmtSub) SubCommands() Map {
 
 func TestFmtHelpGroup(t *testing.T) {
 	fh := fmtHelp("test", new(testFmtSub))
-	want := `Usage:    test <cmd> [args]
+	assert.Equal(t, fh,
+		`Usage:    test <cmd> [args]
 	test2
 	testin
-`
+`)
 
-	if fh != want {
-		t.Errorf("\n%x\n!=\n%x", fh, want)
-	}
 }
 
 type allTypes struct {
