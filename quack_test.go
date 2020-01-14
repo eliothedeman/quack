@@ -194,7 +194,7 @@ type valid struct {
 	Val string
 }
 
-func (v valid) Validate() error {
+func (v *valid) Validate() error {
 	if v.Val == "invalid" {
 		return errors.New("invalid")
 	}
@@ -209,6 +209,7 @@ func TestValidator(t *testing.T) {
 	err := run("invalid", v, []string{"--val", "invalid"})
 	if err == nil {
 		t.Error("Invalid command should return validation error")
+		return
 	}
 
 	err = run("valid", v, []string{"--val", "yup"})
@@ -218,9 +219,9 @@ func TestValidator(t *testing.T) {
 }
 
 func TestValidateUnit(t *testing.T) {
-	err := run("bad", WithGroup(Map{
+	err := run("bad", Map{
 		"bad_cmd": 10,
-	}), []string{})
+	}, []string{})
 	if !errors.Is(err, ErrWrongType) {
 		t.Errorf("[%s] is wrong type of error", err)
 	}

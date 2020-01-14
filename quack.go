@@ -17,7 +17,6 @@ type Unit interface{}
 func validateUnit(u Unit) error {
 	switch u := u.(type) {
 	case Command:
-		break
 	case Group:
 		for _, v := range u.SubCommands() {
 			err := validateUnit(v)

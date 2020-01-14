@@ -64,6 +64,7 @@ func run(name string, u Unit, raw []string) error {
 
 	switch u := u.(type) {
 	case Command:
+
 		if d, ok := u.(Defaulter); ok {
 			d.Default()
 		}
