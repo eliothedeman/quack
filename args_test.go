@@ -1,9 +1,10 @@
 package quack
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type testFmtStruct struct {
@@ -113,4 +114,28 @@ func TestAllTypes(t *testing.T) {
 			}
 		})
 	}
+}
+
+type ts1 struct {
+	X int
+}
+
+type ts2 struct {
+	ts1
+	Y int
+}
+
+func (t *ts2) Run([]string) {
+
+}
+
+func TestEmbeddedStruct(t *testing.T) {
+	x := new(ts2)
+	fs := getFlags("embeddedTest", x)
+	// err := fs.Parse([]string{"--x 10 --y 20"})
+	err := fs.Parse([]string{"--y", "20", "--x", "10"})
+	assert.Nil(t, err)
+	assert.Equal(t, x.X, 10)
+	assert.Equal(t, x.Y, 20)
+
 }
