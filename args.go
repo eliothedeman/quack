@@ -203,10 +203,10 @@ func fmtHelp(name string, u Unit) string {
 			return k[i] < k[j]
 		})
 		for _, name := range k {
-			fmt.Fprintf(&b, "\t%s", name)
+			fmt.Fprintf(&b, "\t<%s>", name)
 			c := cmds[name]
 			if h, ok := c.(Helper); ok {
-				fmt.Fprintf(&b, " \"%s\"", h.Help())
+				fmt.Fprintf(&b, "%s", h.Help())
 			}
 			b.WriteByte('\n')
 		}
