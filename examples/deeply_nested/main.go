@@ -21,7 +21,9 @@ func (b) SubCommands() quack.Map {
 }
 
 type c struct {
-	X, Y, Z string
+	XX string `default:"YYY" short:"x"`
+	Y  int    `help:"this is a help message"`
+	Z  bool   `default:"true"`
 }
 
 func (c) Run([]string) {

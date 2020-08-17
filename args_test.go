@@ -28,11 +28,7 @@ func (*testFmtSub) SubCommands() Map {
 
 func TestFmtHelpGroup(t *testing.T) {
 	fh := fmtHelp("test", new(testFmtSub))
-	assert.Equal(t, fh,
-		`Usage:    test <cmd> [args]
-	test2
-	testin
-`)
+	assert.Equal(t, fh, "Usage:    test <cmd> [args]\n      test2 \n      testin \n")
 
 }
 

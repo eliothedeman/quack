@@ -183,12 +183,13 @@ func fmtHelp(name string, u Unit) string {
 	switch u := u.(type) {
 	case Command:
 		fmt.Fprintf(&b, "Usage:    %s [args]\n", name)
-		f := getFlags("", u)
+		f := getFlags(name, u)
 		if h, ok := u.(Helper); ok {
+			b.WriteByte('\t')
 			b.WriteString(h.Help())
 			b.WriteByte('\n')
 		}
-		b.WriteString(f.FlagUsages())
+		fmtUsage(&b, f)
 
 	case Group:
 		fmt.Fprintf(&b, "Usage:    %s <cmd> [args]\n", name)
@@ -203,10 +204,10 @@ func fmtHelp(name string, u Unit) string {
 			return k[i] < k[j]
 		})
 		for _, name := range k {
-			fmt.Fprintf(&b, "\t<%s>", name)
+			fmt.Fprintf(&b, "      %s ", name)
 			c := cmds[name]
 			if h, ok := c.(Helper); ok {
-				fmt.Fprintf(&b, "%s", h.Help())
+				fmt.Fprint(&b, h.Help())
 			}
 			b.WriteByte('\n')
 		}
