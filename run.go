@@ -71,7 +71,8 @@ func run(name string, u Unit, raw []string) error {
 		fs := getFlags(name, u)
 
 		if hasHelpArg(raw, fs.ShorthandLookup("h") == nil) {
-			return helpError(name, u)
+			printHelp(name, u)
+			return nil
 		}
 
 		err := fs.Parse(raw)
@@ -90,7 +91,8 @@ func run(name string, u Unit, raw []string) error {
 	case Group:
 
 		if hasHelpArg(raw, len(raw) == 1) || len(raw) == 0 {
-			return helpError(name, u)
+			printHelp(name, u)
+			return nil
 		}
 		subs := u.SubCommands()
 		s, ok := subs[raw[0]]

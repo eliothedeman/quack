@@ -1,7 +1,6 @@
 package quack
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"reflect"
@@ -235,10 +234,6 @@ func hasHelpArg(args []string, shortHelp bool) bool {
 		}
 	}
 	return false
-}
-
-func helpError(name string, u Unit) error {
-	return errors.New(fmtHelp(name, u))
 }
 
 func keys(m map[string]Unit) []string {
