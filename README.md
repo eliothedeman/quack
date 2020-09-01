@@ -40,22 +40,53 @@ go run main.go --input 12334
 
 ### A simple set of sub commands
 
-_main.go_
+_examples/deeply_nested/main.go_
 
 ```go
-var root = quack.Map{
-	"build":	builtin.Build,
-	"test": 	builtin.Test,
+package main
+
+import "github.com/eliothedeman/quack"
+
+type a struct {
+}
+
+func (a) SubCommands() quack.Map {
+        return quack.Map{
+                "b": new(b),
+        }
+}
+
+type b struct {
+}
+
+func (b) SubCommands() quack.Map {
+        return quack.Map{
+                "c": new(c),
+        }
+}
+
+type c struct {
+        XX string `default:"YYY" short:"x"`
+        Y  int    `help:"this is a help message"`
+        Z  bool   `default:"true"`
+}
+
+func (c) Run([]string) {
+
+}
+
+func (c) Help() string {
+	return "the nested c command"
 }
 
 func main() {
-	quack.Run("go", quack.WithGroup(root))
+	quack.Run("nested", quack.WithGroup(new(a)))
 }
+
 ```
 
 ```
-go run main.go -h
-Usage: go <cmd> [args]
-	build 	"build go source files"
-	test 	"test go source files"
+go run examples/deeply_nested/main.go b -h
+Usage:    b <cmd> [args]
+      c the nested c command
 ```
