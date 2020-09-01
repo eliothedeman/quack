@@ -89,4 +89,14 @@ func main() {
 go run examples/deeply_nested/main.go b -h
 Usage:    b <cmd> [args]
       c the nested c command
+
+
+go run examples/deeply_nested/main.go b c -h
+Usage:    c [args]
+        the nested c command
+Flags:                                   
+             --z         (default=true)  
+Options:                                 
+         -x, --xx string (default='YYY') 
+             --y  int    (default=0)     this is a help message
 ```
