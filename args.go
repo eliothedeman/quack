@@ -154,6 +154,10 @@ func getFlags(name string, c Command) *pflag.FlagSet {
 	v.FieldByNameFunc(func(s string) bool {
 		f := v.FieldByName(s)
 		sf, ok := t.FieldByName(s)
+		// Skip over embedded structs from other packages. Their fields will come later in the traversal.
+		if sf.Anonymous {
+			return false
+		}
 		if !ok {
 			panic("wtf")
 		}
