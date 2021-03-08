@@ -206,22 +206,32 @@ func (v valid) Run([]string) {
 }
 func TestValidator(t *testing.T) {
 	v := new(valid)
-	err := run("invalid", v, []string{"--val", "invalid"})
+	o := options{
+		Unit: v,
+		args: []string{"--val", "invalid"},
+	}
+	err := o.run("invalid")
 	if err == nil {
 		t.Error("Invalid command should return validation error")
 		return
 	}
+	o.args = []string{"--val", "yup"}
 
-	err = run("valid", v, []string{"--val", "yup"})
+	err = o.run("valid")
 	if err != nil {
 		t.Errorf("Unexpected error %s", err)
 	}
 }
 
 func TestValidateUnit(t *testing.T) {
-	err := run("bad", Map{
-		"bad_cmd": 10,
-	}, []string{})
+	o := options{
+		Unit: Map{
+			"bad_cmd": 10,
+		},
+		args: []string{},
+	}
+
+	err := o.run("bad")
 	if !errors.Is(err, ErrWrongType) {
 		t.Errorf("[%s] is wrong type of error", err)
 	}

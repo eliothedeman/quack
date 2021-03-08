@@ -16,7 +16,8 @@ func handleRunError(err error) {
 
 type options struct {
 	Unit
-	args []string
+	colorEnabled bool
+	args         []string
 }
 
 // Option allows the user to customize the running of commands and groups
@@ -52,11 +53,13 @@ func Run(name string, opts ...Option) {
 		o(&config)
 	}
 
-	handleRunError(run(name, config.Unit, config.args))
+	handleRunError(config.run(name))
 }
 
 // run a command or find a subcommand
-func run(name string, u Unit, raw []string) error {
+func (o *options) run(name string) error {
+	u := o.Unit
+	raw := o.args
 	err := validateUnit(u)
 	if err != nil {
 		return err
@@ -99,7 +102,12 @@ func run(name string, u Unit, raw []string) error {
 		if !ok {
 			return fmt.Errorf("unable to find subcommand %s\n%s", raw[0], fmtHelp(name, u))
 		}
-		return run(raw[0], s, raw[1:])
+		child := options{
+			Unit:         s,
+			args:         raw[1:],
+			colorEnabled: o.colorEnabled,
+		}
+		return child.run(raw[0])
 	default:
 		return fmt.Errorf("unknown type %T is not Command or Group", u)
 	}
