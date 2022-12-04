@@ -3,7 +3,6 @@ package quack
 // Func turns a function into a command.
 type Func func([]string)
 
-// Run the basic command wrapper
 func (f Func) Run(args []string) {
 	f(args)
 }
