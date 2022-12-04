@@ -15,7 +15,7 @@ type TSub struct {
 	Called bool
 }
 
-func (t *TSub) Run([]string) {
+func (t *TSub) Run() {
 	t.Called = true
 }
 
@@ -56,7 +56,7 @@ func TestRunGroupWithOSArgs(t *testing.T) {
 func TestRunCommand(t *testing.T) {
 	r := &TSub{}
 	os.Args = []string{"./bin", "hello", "--name", "wilson"}
-	Run("test", WithCommand(r))
+	Run("test", WithSimpleCommand(r))
 
 	if r.Called != true {
 		t.Fatal()
@@ -217,7 +217,7 @@ func TestValidator(t *testing.T) {
 	}
 }
 
-func TestValidateUnit(t *testing.T) {
+func TestValidateany(t *testing.T) {
 	err := run("bad", Map{
 		"bad_cmd": 10,
 	}, []string{})

@@ -15,7 +15,8 @@ func handleRunError(err error) {
 }
 
 type options struct {
-	Unit
+	unit any
+
 	args []string
 }
 
@@ -32,14 +33,20 @@ func WithArgs(args []string) Option {
 // WithCommand sets the command to run. If called again, or after WithGroup, the last call will be respected.
 func WithCommand(c Command) Option {
 	return func(o *options) {
-		o.Unit = c
+		o.unit = c
+	}
+}
+
+func WithSimpleCommand(c SimpleCommand) Option {
+	return func(o *options) {
+		o.unit = c
 	}
 }
 
 // WithGroup sets the group to run. If called again, or after WithGroup, the last call will be respected.
 func WithGroup(g Group) Option {
 	return func(o *options) {
-		o.Unit = g
+		o.unit = g
 	}
 }
 
@@ -52,18 +59,18 @@ func Run(name string, opts ...Option) {
 		o(&config)
 	}
 
-	handleRunError(run(name, config.Unit, config.args))
+	handleRunError(run(name, config.unit, config.args))
 }
 
 // run a command or find a subcommand
-func run(name string, u Unit, raw []string) error {
-	err := validateUnit(u)
+func run(name string, u any, raw []string) error {
+	err := validateany(u)
 	if err != nil {
 		return err
 	}
 
 	switch u := u.(type) {
-	case Command:
+	case Command, SimpleCommand:
 
 		if d, ok := u.(Defaulter); ok {
 			d.Default()
@@ -87,7 +94,12 @@ func run(name string, u Unit, raw []string) error {
 				return fmt.Errorf("validation error: %w", err)
 			}
 		}
-		u.Run(raw)
+		switch u := u.(type) {
+		case Command:
+			u.Run(raw)
+		case SimpleCommand:
+			u.Run()
+		}
 	case Group:
 
 		if hasHelpArg(raw, len(raw) == 1) || len(raw) == 0 {

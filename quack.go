@@ -6,20 +6,18 @@ import (
 )
 
 var (
-	// ErrWrongType is returned when a Unit does not have the the correct underlying type.
+	// ErrWrongType is returned when a any does not have the the correct underlying type.
 	ErrWrongType = errors.New("wrong type")
 )
 
-// Unit is a placeholder for commands and groups.
-type Unit interface{}
-
 // validate that a unit is either a command or group. If Group this will be done recursivly.
-func validateUnit(u Unit) error {
+func validateany(u any) error {
 	switch u := u.(type) {
 	case Command:
+	case SimpleCommand:
 	case Group:
 		for _, v := range u.SubCommands() {
-			err := validateUnit(v)
+			err := validateany(v)
 			if err != nil {
 				return err
 			}
@@ -33,6 +31,11 @@ func validateUnit(u Unit) error {
 // Command is a runnable command that doesn't have sub commands
 type Command interface {
 	Run([]string)
+}
+
+// SimpleCommand is a command that doesn't care about the raw args
+type SimpleCommand interface {
+	Run()
 }
 
 // Group is a set of subcommands or sub groups.

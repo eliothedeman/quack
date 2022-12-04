@@ -20,7 +20,7 @@ type testFmtSub struct {
 }
 
 func (*testFmtSub) SubCommands() Map {
-	return map[string]Unit{
+	return map[string]any{
 		"testin": &testFmtStruct{},
 		"test2":  &testFmtStruct{},
 	}

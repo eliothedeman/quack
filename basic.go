@@ -27,7 +27,7 @@ func (f Func) WithHelp(help string) Command {
 }
 
 // Map is a wrapper around a group of commands. No Need to define a struct
-type Map map[string]Unit
+type Map map[string]any
 
 // WithHelp will return the map with a "Helper" interface attached
 func (m Map) WithHelp(help string) Group {

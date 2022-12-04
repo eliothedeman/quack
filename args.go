@@ -148,7 +148,7 @@ func setFlag(v reflect.Value, f reflect.StructField, fs *pflag.FlagSet) {
 	}
 }
 
-func getFlags(name string, c Command) *pflag.FlagSet {
+func getFlags(name string, c any) *pflag.FlagSet {
 	fs := pflag.NewFlagSet(name, pflag.ContinueOnError)
 	v := reflect.Indirect(reflect.ValueOf(c))
 	t := v.Type()
@@ -184,7 +184,7 @@ func getFlags(name string, c Command) *pflag.FlagSet {
 	return fs
 }
 
-func fmtHelp(name string, u Unit) string {
+func fmtHelp(name string, u any) string {
 	var b strings.Builder
 
 	switch u := u.(type) {
@@ -222,7 +222,7 @@ func fmtHelp(name string, u Unit) string {
 	return b.String()
 }
 
-func printHelp(name string, u Unit) {
+func printHelp(name string, u any) {
 	fmt.Println(fmtHelp(name, u))
 }
 
@@ -244,7 +244,7 @@ func hasHelpArg(args []string, shortHelp bool) bool {
 	return false
 }
 
-func keys(m map[string]Unit) []string {
+func keys(m map[string]any) []string {
 	out := make([]string, 0, len(m))
 	for k := range m {
 		out = append(out, k)
