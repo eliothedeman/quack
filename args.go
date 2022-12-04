@@ -27,6 +27,10 @@ func fieldNameToArg(f string) string {
 	return strcase.ToKebab(f)
 }
 
+func rawAddr[T any](v reflect.Value) *T {
+	return (*T)(unsafe.Pointer(v.UnsafeAddr()))
+}
+
 // This is a very long function used to add a flag to a flagset based on a reflection type.
 // I don't like it, but I don't see a better way.
 func setFlag(v reflect.Value, f reflect.StructField, fs *pflag.FlagSet) {
@@ -44,19 +48,18 @@ func setFlag(v reflect.Value, f reflect.StructField, fs *pflag.FlagSet) {
 		argName = fieldNameToArg(f.Name)
 	}
 	addr := v.Addr().Interface()
-	rawAddr := unsafe.Pointer(v.UnsafeAddr())
 	switch v.Kind() {
 	case reflect.Bool:
 		if hasShort {
-			fs.BoolVarP((*bool)(rawAddr), argName, short, boolVal, help)
+			fs.BoolVarP(rawAddr[bool](v), argName, short, boolVal, help)
 		} else {
-			fs.BoolVar((*bool)(rawAddr), argName, boolVal, help)
+			fs.BoolVar(rawAddr[bool](v), argName, boolVal, help)
 		}
 	case reflect.Int:
 		if hasShort {
-			fs.IntVarP((*int)(rawAddr), argName, short, intVal, help)
+			fs.IntVarP(rawAddr[int](v), argName, short, intVal, help)
 		} else {
-			fs.IntVar((*int)(rawAddr), argName, intVal, help)
+			fs.IntVar(rawAddr[int](v), argName, intVal, help)
 		}
 		// handle a few types that are also int64
 	case reflect.Int64:
@@ -68,77 +71,78 @@ func setFlag(v reflect.Value, f reflect.StructField, fs *pflag.FlagSet) {
 			}
 		} else {
 			if hasShort {
-				fs.Int64VarP((*int64)(rawAddr), argName, short, int64(intVal), help)
+				fs.Int64VarP(rawAddr[int64](v), argName, short, int64(intVal), help)
 			} else {
-				fs.Int64Var((*int64)(rawAddr), argName, int64(intVal), help)
+				fs.Int64Var(rawAddr[int64](v), argName, int64(intVal), help)
 			}
 		}
 	case reflect.Int32:
 		if hasShort {
-			fs.Int32VarP((*int32)(rawAddr), argName, short, int32(intVal), help)
+			fs.Int32VarP(rawAddr[int32](v), argName, short, int32(intVal), help)
 		} else {
-			fs.Int32Var((*int32)(rawAddr), argName, int32(intVal), help)
+			fs.Int32Var(rawAddr[int32](v), argName, int32(intVal), help)
 		}
 	case reflect.Int16:
 		if hasShort {
-			fs.Int16VarP((*int16)(rawAddr), argName, short, int16(intVal), help)
+			fs.Int16VarP(rawAddr[int16](v), argName, short, int16(intVal), help)
 		} else {
-			fs.Int16Var((*int16)(rawAddr), argName, int16(intVal), help)
+			fs.Int16Var(rawAddr[int16](v), argName, int16(intVal), help)
 		}
 	case reflect.Int8:
 		if hasShort {
-			fs.Int8VarP((*int8)(rawAddr), argName, short, int8(intVal), help)
+			fs.Int8VarP(rawAddr[int8](v), argName, short, int8(intVal), help)
 		} else {
-			fs.Int8Var((*int8)(rawAddr), argName, int8(intVal), help)
+			fs.Int8Var(rawAddr[int8](v), argName, int8(intVal), help)
 		}
 	case reflect.Uint:
 		if hasShort {
-			fs.UintVarP((*uint)(rawAddr), argName, short, uint(intVal), help)
+			fs.UintVarP(rawAddr[uint](v), argName, short, uint(intVal), help)
 		} else {
-			fs.UintVar((*uint)(rawAddr), argName, uint(intVal), help)
+			fs.UintVar(rawAddr[uint](v), argName, uint(intVal), help)
 		}
 	case reflect.Uint64:
 		if hasShort {
-			fs.Uint64VarP((*uint64)(rawAddr), argName, short, uint64(intVal), help)
+			fs.Uint64VarP(rawAddr[uint64](v), argName, short, uint64(intVal), help)
 		} else {
-			fs.Uint64Var((*uint64)(rawAddr), argName, uint64(intVal), help)
+			fs.Uint64Var(rawAddr[uint64](v), argName, uint64(intVal), help)
 		}
 	case reflect.Uint32:
 		if hasShort {
-			fs.Uint32VarP((*uint32)(rawAddr), argName, short, uint32(intVal), help)
+			fs.Uint32VarP(rawAddr[uint32](v), argName, short, uint32(intVal), help)
 		} else {
-			fs.Uint32Var((*uint32)(rawAddr), argName, uint32(intVal), help)
+			fs.Uint32Var(rawAddr[uint32](v), argName, uint32(intVal), help)
 		}
 	case reflect.Uint16:
 		if hasShort {
-			fs.Uint16VarP((*uint16)(rawAddr), argName, short, uint16(intVal), help)
+			fs.Uint16VarP(rawAddr[uint16](v), argName, short, uint16(intVal), help)
 		} else {
-			fs.Uint16Var((*uint16)(rawAddr), argName, uint16(intVal), help)
+			fs.Uint16Var(rawAddr[uint16](v), argName, uint16(intVal), help)
 		}
 	case reflect.Uint8:
 		if hasShort {
-			fs.Uint8VarP((*uint8)(rawAddr), argName, short, uint8(intVal), help)
+			fs.Uint8VarP(rawAddr[uint8](v), argName, short, uint8(intVal), help)
 		} else {
-			fs.Uint8Var((*uint8)(rawAddr), argName, uint8(intVal), help)
+			fs.Uint8Var(rawAddr[uint8](v), argName, uint8(intVal), help)
 		}
 	case reflect.Float32:
 		if hasShort {
-			fs.Float32VarP((*float32)(rawAddr), argName, short, float32(floatVal), help)
+			fs.Float32VarP(rawAddr[float32](v), argName, short, float32(floatVal), help)
 		} else {
-			fs.Float32Var((*float32)(rawAddr), argName, float32(floatVal), help)
+			fs.Float32Var(rawAddr[float32](v), argName, float32(floatVal), help)
 		}
 	case reflect.Float64:
 		if hasShort {
-			fs.Float64VarP((*float64)(rawAddr), argName, short, float64(floatVal), help)
+			fs.Float64VarP(rawAddr[float64](v), argName, short, float64(floatVal), help)
 		} else {
-			fs.Float64Var((*float64)(rawAddr), argName, float64(floatVal), help)
+			fs.Float64Var(rawAddr[float64](v), argName, float64(floatVal), help)
 		}
 	case reflect.String:
 		if hasShort {
-			fs.StringVarP((*string)(rawAddr), argName, short, strVal, help)
+			fs.StringVarP(rawAddr[string](v), argName, short, strVal, help)
 		} else {
-			fs.StringVar((*string)(rawAddr), argName, strVal, help)
+			fs.StringVar(rawAddr[string](v), argName, strVal, help)
 		}
+
 	default:
 		log.Panicf("Unable to handle type set flags for %v", f)
 	}
