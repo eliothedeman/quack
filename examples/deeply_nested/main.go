@@ -35,6 +35,6 @@ func (c) Help() string {
 }
 
 func main() {
-	cmd, _ := quack.Bind("nested", new(a))
+	cmd, _ := quack.BindCobra("nested", new(a))
 	cmd.Execute()
 }

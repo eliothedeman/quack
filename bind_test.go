@@ -33,7 +33,7 @@ func sanatize(s string) string {
 	return s
 }
 
-func TestBind(t *testing.T) {
+func TestBindCobra(t *testing.T) {
 	simple := new(simpleCmd)
 	tests := []struct {
 		name  string
@@ -69,7 +69,7 @@ Flags:
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cmd, err := Bind(test.name, test.in)
+			cmd, err := BindCobra(test.name, test.in)
 			if test.err == nil {
 				assert.Nil(t, err)
 				cmd.UsageString()
