@@ -13,6 +13,13 @@ Have you ever said
 
 Then quack is for you.
 
+## Integration with [spf13/cobra](https://github.com/spf13/cobra)
+The Bind api creates a `cobra.Command` from the given structure. This allows for easy integration
+with existing cli's that use this framework.
+
+## Other framework support
+Supporting other frameworks like [urfave/cli](https://github.com/urfave/cli) would be pretty easy. Feel free to file an issue with your framework of choice if you want it added.
+
 ### A simple command
 
 _main.go_
@@ -22,12 +29,12 @@ type ToHex struct {
 	Input int
 }
 
-func (t ToHex) Run([]args) {
+func (t ToHex) Run() {
 	fmt.Printf("%x", t.Input)
 }
 
 func main() {
-	quack.Run("tohex", quack.WithCommand(&ToHex{}))
+	quack.MustBind("tohex", new(ToHex)).Execute()
 }
 ```
 
@@ -80,7 +87,7 @@ func (c) Help() string {
 }
 
 func main() {
-	quack.Run("nested", quack.WithGroup(new(a)))
+	quack.MustBind("nested", new(a))
 }
 
 ```
