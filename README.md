@@ -1,7 +1,7 @@
 # quack
 
 ![GoDoc](https://godoc.org/github.com/eliothedeman/quack?status.svg)
-![Test](https://github.com/eliothedeman/quack/workflows/Test/badge.svg)
+![Test](https://github.com/eliothedeman/quack/actions/workflows/test.yml/badge.svg)
 
 An interface driven cli lib for go.
 
