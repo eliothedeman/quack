@@ -181,8 +181,8 @@ func (c *node) fromStruct(name string, target any) error {
 	return nil
 }
 
-// Bind a structure to a *cobra.Command (and sub-commands)
-func Bind(name string, root any) (*cobra.Command, error) {
+// BindCobra a structure to a *cobra.Command (and sub-commands)
+func BindCobra(name string, root any) (*cobra.Command, error) {
 	rn := new(node)
 	err := rn.fromStruct(name, root)
 	if err != nil {
@@ -191,9 +191,9 @@ func Bind(name string, root any) (*cobra.Command, error) {
 	return rn.toCobra(), err
 }
 
-// MustBind will panic if Bind returns an error
-func MustBind(name string, root any) *cobra.Command {
-	cmd, err := Bind(name, root)
+// MustBindCobra will panic if BindCobra returns an error
+func MustBindCobra(name string, root any) *cobra.Command {
+	cmd, err := BindCobra(name, root)
 	if err != nil {
 		panic(err)
 	}

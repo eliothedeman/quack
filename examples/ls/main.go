@@ -44,7 +44,7 @@ func (l ls) Run([]string) {
 }
 
 func main() {
-	cmd, err := quack.Bind("ls", root)
+	cmd, err := quack.BindCobra("ls", root)
 	if err != nil {
 		log.Fatal(err)
 	}
