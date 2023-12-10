@@ -35,5 +35,6 @@ func (c) Help() string {
 }
 
 func main() {
-	quack.Run("nested", quack.WithGroup(new(a)))
+	cmd, _ := quack.Bind("nested", new(a))
+	cmd.Execute()
 }

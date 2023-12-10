@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/eliothedeman/quack"
 )
@@ -33,7 +33,7 @@ func (l *ls) Validate() error {
 }
 
 func (l ls) Run([]string) {
-	d, err := ioutil.ReadDir(l.Path)
+	d, err := os.ReadDir(l.Path)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,8 +44,9 @@ func (l ls) Run([]string) {
 }
 
 func main() {
-	quack.Run(
-		"example",
-		quack.WithGroup(root),
-	)
+	cmd, err := quack.Bind("ls", root)
+	if err != nil {
+		log.Fatal(err)
+	}
+	cmd.Execute()
 }

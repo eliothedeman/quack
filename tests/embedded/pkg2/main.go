@@ -23,6 +23,6 @@ func (c cmd) Run([]string) {
 }
 
 func main() {
-	quack.Run("test", quack.WithCommand(new(cmd)))
+	quack.MustBind("test", new(cmd)).Execute()
 
 }
