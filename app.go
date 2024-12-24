@@ -3,39 +3,57 @@ package quack
 import (
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 )
 
-/*
-	type node struct {
-		name     string
-		fn       any
-		children []*node
-	}
+type node struct {
+	name     string
+	desc     *funcDesc
+	children []*node
+}
 
-	type AppBuilder struct {
-		node
-	}
+type AppBuilder struct {
+	name string
+	err  error
+	root node
+}
 
-type Option func(*node)
-
-	func App(name string) *AppBuilder {
-		return &AppBuilder{node{name: name}}
-	}
-
-	type CmdBuilder struct {
-		node
-	}
-
-	func Cmd[T any](name string, fn func(T)) Option {
-		return func(n *node) {
-			n.children = append(n.children, &node{
-				name: name,
-				fn:   fn,
-			})
+func App(name string, commands ...Fn) *AppBuilder {
+	b := &AppBuilder{name: name}
+	for _, c := range commands {
+		err := c(&b.root)
+		if err != nil {
+			b.err = err
+			break
 		}
 	}
-*/
+	return b
+}
+
+type Fn func(*node) error
+
+func Cmd[T any](name string, fn func(T), subcommands ...Fn) Fn {
+	return func(parent *node) error {
+		def, err := extract(fn)
+		if err != nil {
+			return err
+		}
+		this := &node{
+			name:     name,
+			desc:     def,
+			children: nil,
+		}
+		parent.children = append(parent.children, this)
+		for _, cmd := range subcommands {
+			err = cmd(this)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
 
 var (
 	ErrInvalidFunction = errors.New("invalid function")
@@ -55,18 +73,47 @@ type option interface {
 }
 
 type baseDef[T V] struct {
-	longNames  []string
-	shortNames []rune
-	present    bool
-	v          T
+	longName      string
+	shortName     string
+	help          string
+	defaultString string
+	present       bool
+	val           T
 }
 
-func (b *baseDef[T]) long(l string) {
-	b.longNames = append(b.longNames, l)
+func (b *baseDef[T]) parseTags(t *reflect.StructField) {
+	b.longName = t.Tag.Get("long")
+	if b.longName == "" {
+		b.longName = t.Name
+	}
+	b.shortName = t.Tag.Get("short")
+	b.help = t.Tag.Get("help")
+	b.defaultString = t.Tag.Get("default")
 }
 
-func (b *baseDef[T]) short(l rune) {
-	b.shortNames = append(b.shortNames, l)
+func (b *baseDef[T]) Val() T {
+	return b.val
+}
+
+func (b *baseDef[T]) ptr() any {
+	return &b.val
+}
+
+func (b *baseDef[T]) long() string {
+	return b.longName
+}
+
+func (b *baseDef[T]) short() string {
+	return b.shortName
+}
+
+var _ baseInner = new(baseDef[int])
+
+type baseInner interface {
+	ptr() any
+	long() string
+	short() string
+	parseTags(t *reflect.StructField)
 }
 
 type Opt[T V] struct {
@@ -76,6 +123,7 @@ type Opt[T V] struct {
 func (Opt[T]) opt() {}
 
 type opt interface {
+	baseInner
 	opt()
 }
 
@@ -86,6 +134,7 @@ type Arg[T V] struct {
 func (a Arg[T]) arg() {}
 
 type arg interface {
+	baseInner
 	arg()
 }
 type Flag struct {
@@ -111,8 +160,8 @@ type required interface {
 }
 
 type funcDesc struct {
-	fn       any
-	input    any
+	fn       reflect.Value
+	fnArgPtr reflect.Value
 	args     []arg
 	opts     []opt
 	flags    []flag
@@ -123,30 +172,31 @@ type funcDesc struct {
 
 func extract[T any](fn func(T)) (*funcDesc, error) {
 	t := new(T)
-	v := reflect.ValueOf(t).Elem()
-	tp := v.Type()
+	v := reflect.ValueOf(t)
+	tp := v.Elem().Type()
 	if tp.Kind() != reflect.Struct {
 		return nil, ErrNotStruct
 	}
-	out := &funcDesc{fn: fn, input: t}
-	for i := 0; i < v.NumField(); i++ {
-		f := v.Field(i)
+	out := &funcDesc{fn: reflect.ValueOf(fn), fnArgPtr: v}
+	for i := 0; i < v.Elem().NumField(); i++ {
+		f := v.Elem().Field(i)
+		ft := v.Elem().Type().Field(i)
+
+		if base, ok := f.Addr().Interface().(baseInner); ok {
+			base.parseTags(&ft)
+		} else {
+			continue
+		}
+
 		switch field := f.Addr().Interface().(type) {
-		case required:
-			switch field := field.required().(type) {
-			case opt:
-				out.reqOpts = append(out.reqOpts, field)
-			case arg:
-				out.reqArgs = append(out.reqArgs, field)
-			case flag:
-				out.reqFlags = append(out.reqFlags, field)
-			}
 		case opt:
 			out.opts = append(out.opts, field)
 		case arg:
 			out.args = append(out.args, field)
 		case flag:
 			out.flags = append(out.flags, field)
+		default:
+			log.Panicf("Bad type %T", field)
 		}
 	}
 

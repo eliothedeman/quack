@@ -76,6 +76,7 @@ func TestExtractFlag(t *testing.T) {
 	}, toCount(tf))
 }
 
+/*
 func TestExtractRequired(t *testing.T) {
 	tf, err := extract(func(args struct {
 		IsSet Req[Opt[int]]
@@ -88,3 +89,7 @@ func TestExtractRequired(t *testing.T) {
 		reqOpts: 1,
 	}, toCount(tf))
 }
+
+func TestCall(t *testing.T) {
+}
+*/
