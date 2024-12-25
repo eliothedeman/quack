@@ -4,7 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"reflect"
+	"strings"
+
+	"github.com/spf13/pflag"
 )
 
 type node struct {
@@ -13,14 +17,40 @@ type node struct {
 	children []*node
 }
 
-type AppBuilder struct {
+func isOptionOrFlag(arg string) bool {
+	return strings.HasPrefix(arg, "-")
+}
+
+// find the terminal command. The return value is a node if found, and the arguments that
+// haven't been consumed yet.
+func (n *node) find(args []string) (*node, []string) {
+	if len(args) > 0 {
+		if isOptionOrFlag(args[0]) {
+			return nil, nil
+		}
+		if args[0] == n.name {
+			return n, args[1:]
+		}
+	}
+	return nil, nil
+}
+
+type Application struct {
 	name string
 	err  error
 	root node
 }
 
-func App(name string, commands ...Fn) *AppBuilder {
-	b := &AppBuilder{name: name}
+func (a *Application) Run() error {
+	return a.RunArgs(os.Args)
+}
+
+func (a *Application) RunArgs(string []string) error {
+	return nil
+}
+
+func App(name string, commands ...Fn) *Application {
+	b := &Application{name: name}
 	for _, c := range commands {
 		err := c(&b.root)
 		if err != nil {
@@ -33,9 +63,9 @@ func App(name string, commands ...Fn) *AppBuilder {
 
 type Fn func(*node) error
 
-func Cmd[T any](name string, fn func(T), subcommands ...Fn) Fn {
+func Cmd[T any](name string, fn func(args T), subcommands ...Fn) Fn {
 	return func(parent *node) error {
-		def, err := extract(fn)
+		def, err := extract(name, fn)
 		if err != nil {
 			return err
 		}
@@ -162,6 +192,7 @@ type required interface {
 type funcDesc struct {
 	fn       reflect.Value
 	fnArgPtr reflect.Value
+	flagSet  *pflag.FlagSet
 	args     []arg
 	opts     []opt
 	flags    []flag
@@ -170,14 +201,18 @@ type funcDesc struct {
 	reqFlags []flag
 }
 
-func extract[T any](fn func(T)) (*funcDesc, error) {
+func (f *funcDesc) call(args []string) {
+	f.fn.Call([]reflect.Value{f.fnArgPtr})
+}
+
+func extract[T any](name string, fn func(T)) (*funcDesc, error) {
 	t := new(T)
 	v := reflect.ValueOf(t)
 	tp := v.Elem().Type()
 	if tp.Kind() != reflect.Struct {
 		return nil, ErrNotStruct
 	}
-	out := &funcDesc{fn: reflect.ValueOf(fn), fnArgPtr: v}
+	out := &funcDesc{fn: reflect.ValueOf(fn), fnArgPtr: v, flagSet: pflag.NewFlagSet(name, pflag.ContinueOnError)}
 	for i := 0; i < v.Elem().NumField(); i++ {
 		f := v.Elem().Field(i)
 		ft := v.Elem().Type().Field(i)

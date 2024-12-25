@@ -27,7 +27,7 @@ func toCount(f *funcDesc) argCount {
 }
 
 func TestExtractFuncDefs(t *testing.T) {
-	tf, err := extract(func(args struct {
+	tf, err := extract("defs", func(args struct {
 		Time int
 	}) {
 	})
@@ -38,7 +38,7 @@ func TestExtractFuncDefs(t *testing.T) {
 }
 
 func TestExtractOpt(t *testing.T) {
-	tf, err := extract(func(args struct {
+	tf, err := extract("", func(args struct {
 		Time Opt[int]
 	}) {
 	})
@@ -51,7 +51,7 @@ func TestExtractOpt(t *testing.T) {
 }
 
 func TestExtractArg(t *testing.T) {
-	tf, err := extract(func(args struct {
+	tf, err := extract("", func(args struct {
 		Time Arg[int]
 	}) {
 	})
@@ -64,7 +64,7 @@ func TestExtractArg(t *testing.T) {
 }
 
 func TestExtractFlag(t *testing.T) {
-	tf, err := extract(func(args struct {
+	tf, err := extract("", func(args struct {
 		IsSet Flag
 	}) {
 	})
@@ -77,19 +77,24 @@ func TestExtractFlag(t *testing.T) {
 }
 
 /*
-func TestExtractRequired(t *testing.T) {
-	tf, err := extract(func(args struct {
-		IsSet Req[Opt[int]]
-	}) {
-	})
-	if err != nil {
-		t.Fatalf("Err during extraction %s", err)
+	func TestExtractRequired(t *testing.T) {
+		tf, err := extract(func(args struct {
+			IsSet Req[Opt[int]]
+		}) {
+		})
+		if err != nil {
+			t.Fatalf("Err during extraction %s", err)
+		}
+		assert.Equal(t, argCount{
+			reqOpts: 1,
+		}, toCount(tf))
 	}
-	assert.Equal(t, argCount{
-		reqOpts: 1,
-	}, toCount(tf))
-}
-
-func TestCall(t *testing.T) {
-}
 */
+func TestCallSingleOption(t *testing.T) {
+	App("test", Cmd("ls", func(args struct {
+		Dir Opt[string] `short:"d" defualt:"."`
+	},
+	) {
+		assert.Equal(t, args.Dir, ".")
+	})).Run()
+}
