@@ -1,15 +1,6 @@
 package quack
 
-import (
-	"errors"
-	"fmt"
-	"log"
-	"os"
-	"reflect"
-	"strings"
-
-	"github.com/spf13/pflag"
-)
+/*
 
 type node struct {
 	name     string
@@ -102,14 +93,6 @@ type option interface {
 	fieldName(string)
 }
 
-type baseDef[T V] struct {
-	longName      string
-	shortName     string
-	help          string
-	defaultString string
-	present       bool
-	val           T
-}
 
 func (b *baseDef[T]) parseTags(t *reflect.StructField) {
 	b.longName = t.Tag.Get("long")
@@ -137,7 +120,7 @@ func (b *baseDef[T]) short() string {
 	return b.shortName
 }
 
-var _ baseInner = new(baseDef[int])
+var _ baseInner = new(baseDef[Int])
 
 type baseInner interface {
 	ptr() any
@@ -202,6 +185,10 @@ type funcDesc struct {
 }
 
 func (f *funcDesc) call(args []string) {
+	err := f.flagSet.Parse(args)
+	if err == pflag.ErrHelp {
+		println("help")
+	}
 	f.fn.Call([]reflect.Value{f.fnArgPtr})
 }
 
@@ -237,3 +224,4 @@ func extract[T any](name string, fn func(T)) (*funcDesc, error) {
 
 	return out, nil
 }
+*/
