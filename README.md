@@ -13,12 +13,23 @@ Have you ever said
 
 Then quack is for you.
 
+## Features
+
+- 🏗️ **Struct-based CLI** - Define commands using simple Go structs
+- 🎯 **Positional arguments** - Use `arg:"1"`, `arg:"2"` tags for positional args
+- 🔁 **Repeated arguments** - Slices are automatically treated as variadic
+- 🏷️ **Named options** - Support for short (`-f`) and long (`--file`) flags
+- 🪆 **Nested sub-commands** - Easy command hierarchies
+- 🐍 **Cobra integration** - Built on top of [spf13/cobra](https://github.com/spf13/cobra)
+
 ## Integration with [spf13/cobra](https://github.com/spf13/cobra)
 The Bind api creates a `cobra.Command` from the given structure. This allows for easy integration
 with existing cli's that use this framework.
 
 ## Other framework support
 Supporting other frameworks like [urfave/cli](https://github.com/urfave/cli) would be pretty easy. Feel free to file an issue with your framework of choice if you want it added.
+
+## Examples
 
 ### A simple command
 
@@ -43,6 +54,86 @@ Can now be run
 ```
 go run main.go --input 12334
 302e
+```
+
+### Positional arguments
+
+Use the `arg` tag to specify positional arguments:
+
+```go
+type CopyCmd struct {
+	Source string `arg:"1"`
+	Target string `arg:"2"`
+}
+
+func (c *CopyCmd) Run([]string) {
+	fmt.Printf("Copying %s to %s\n", c.Source, c.Target)
+}
+
+func main() {
+	quack.MustBind("copy", new(CopyCmd)).Execute()
+}
+```
+
+```bash
+$ go run main.go copy source.txt target.txt
+Copying source.txt to target.txt
+```
+
+### Repeated arguments (slices)
+
+Slices are automatically treated as variadic arguments:
+
+```go
+type CompileCmd struct {
+	Files []string `arg:"1"`  // Consumes all remaining args
+}
+
+func (c *CompileCmd) Run([]string) {
+	fmt.Printf("Compiling: %v\n", c.Files)
+}
+```
+
+```bash
+$ go run main.go compile file1.go file2.go file3.go
+Compiling: [file1.go file2.go file3.go]
+```
+
+### Mixed flags and positional args
+
+```go
+type BuildCmd struct {
+	Verbose bool     `short:"v" help:"Enable verbose output"`
+	Output  string   `short:"o" help:"Output file"`
+	Files   []string `arg:"1" help:"Source files"`
+}
+
+func (b *BuildCmd) Run([]string) {
+	if b.Verbose {
+		fmt.Printf("Building %v -> %s\n", b.Files, b.Output)
+	}
+	// ... build logic
+}
+```
+
+```bash
+$ go run main.go build -v -o app.bin main.go utils.go
+Building [main.go utils.go] -> app.bin
+```
+
+### Repeated flags
+
+Slices work as flags too:
+
+```go
+type ServerCmd struct {
+	Port    int      `short:"p" default:"8080"`
+	Allowed []string `short:"a" help:"Allowed IPs"`
+}
+```
+
+```bash
+$ go run main.go server -a 192.168.1.1 -a 10.0.0.1
 ```
 
 ### A simple set of sub commands
@@ -101,9 +192,23 @@ Usage:    b <cmd> [args]
 go run examples/deeply_nested/main.go b c -h
 Usage:    c [args]
         the nested c command
-Flags:                                   
-             --z         (default=true)  
-Options:                                 
-         -x, --xx string (default='YYY') 
+Flags:
+             --z         (default=true)
+Options:
+         -x, --xx string (default='YYY')
              --y  int    (default=0)     this is a help message
 ```
+
+## Available Struct Tags
+
+| Tag | Description | Example |
+|-----|-------------|---------|
+| `arg:"N"` | Positional argument at position N (1-indexed) | `arg:"1"` |
+| `short:"x"` | Short flag name | `short:"v"` for `-v` |
+| `long:"name"` | Long flag name (auto-generated from field name if not specified) | `long:"verbose"` |
+| `default:"value"` | Default value | `default:"8080"` |
+| `help:"text"` | Help text for the option | `help:"Port to listen on"` |
+| `ignore:""` | Ignore this field | `ignore:""` |
+
+**Note:** Slice types are automatically treated as repeated/variadic - no special tag needed!
+
