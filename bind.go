@@ -19,7 +19,7 @@ const (
 	shortTag    = "short"
 	longTag     = "long"
 	ignoreTag   = "ignore"
-	positionTag = "position"
+	argTag      = "arg"
 	repeatedTag = "repeated"
 )
 
@@ -31,14 +31,14 @@ type option struct {
 	Short    string
 	Long     string
 	Ignore   bool
-	Position int  // 0 means not positional, >0 means positional argument at that index
+	Arg      int  // 0 means not a positional arg, >0 means positional argument at that index
 	Repeated bool
 }
 
 func (o *option) fmtBuffer(w io.Writer) {
 	fmt.Fprintf(
 		w,
-		" (%s target:%+v help:%s default:%s short:%s long:%s ignore:%t position:%d repeated:%t)",
+		" (%s target:%+v help:%s default:%s short:%s long:%s ignore:%t arg:%d repeated:%t)",
 		o.Name,
 		o.Target.Type(),
 		o.Help,
@@ -46,7 +46,7 @@ func (o *option) fmtBuffer(w io.Writer) {
 		o.Short,
 		o.Long,
 		o.Ignore,
-		o.Position,
+		o.Arg,
 		o.Repeated,
 	)
 }
@@ -63,13 +63,13 @@ func optionFromField(field reflect.StructField) option {
 	_, opt.Ignore = tags.Lookup(ignoreTag)
 	_, opt.Repeated = tags.Lookup(repeatedTag)
 
-	// Parse position tag
-	if posStr := tags.Get(positionTag); posStr != "" {
-		pos, err := strconv.Atoi(posStr)
-		if err != nil || pos < 1 {
-			panic(fmt.Sprintf("invalid position value '%s' for field %s: must be a positive integer", posStr, field.Name))
+	// Parse arg tag
+	if argStr := tags.Get(argTag); argStr != "" {
+		arg, err := strconv.Atoi(argStr)
+		if err != nil || arg < 1 {
+			panic(fmt.Sprintf("invalid arg value '%s' for field %s: must be a positive integer", argStr, field.Name))
 		}
-		opt.Position = pos
+		opt.Arg = arg
 	}
 
 	return opt
@@ -242,8 +242,8 @@ func (c *node) fromStruct(name string, target any) error {
 		opt := optionFromField(sf)
 		opt.Target = f
 
-		// Separate positional and regular options
-		if opt.Position > 0 {
+		// Separate positional args and named options
+		if opt.Arg > 0 {
 			c.positionalOptions = append(c.positionalOptions, opt)
 		} else {
 			c.options = append(c.options, opt)
@@ -252,9 +252,9 @@ func (c *node) fromStruct(name string, target any) error {
 		return false
 	})
 
-	// Sort positional options by their position
+	// Sort positional args by their arg position
 	sort.Slice(c.positionalOptions, func(i, j int) bool {
-		return c.positionalOptions[i].Position < c.positionalOptions[j].Position
+		return c.positionalOptions[i].Arg < c.positionalOptions[j].Arg
 	})
 
 	return nil

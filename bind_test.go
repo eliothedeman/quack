@@ -34,8 +34,8 @@ func sanatize(s string) string {
 }
 
 type positionalCmd struct {
-	Source string `position:"1"`
-	Target string `position:"2"`
+	Source string `arg:"1"`
+	Target string `arg:"2"`
 }
 
 func (p *positionalCmd) Run(*cobra.Command, []string) {
@@ -49,7 +49,7 @@ func (r *repeatedFlagCmd) Run(*cobra.Command, []string) {
 }
 
 type repeatedPositionalCmd struct {
-	Files []string `position:"1"`
+	Files []string `arg:"1"`
 }
 
 func (r *repeatedPositionalCmd) Run(*cobra.Command, []string) {
@@ -107,8 +107,8 @@ Flags:
 }
 
 type outOfOrderPositionalCmd struct {
-	Target string `position:"2"`
-	Source string `position:"1"`
+	Target string `arg:"2"`
+	Source string `arg:"1"`
 }
 
 func (o *outOfOrderPositionalCmd) Run(*cobra.Command, []string) {
@@ -135,12 +135,12 @@ func TestPositionalArgs(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, cobraCmd)
 
-		// Verify that positions are respected, not field order
+		// Verify that arg positions are respected, not field order
 		cobraCmd.SetArgs([]string{"source.txt", "target.txt"})
 		err = cobraCmd.Execute()
 		assert.Nil(t, err)
-		assert.Equal(t, "source.txt", cmd.Source) // position 1
-		assert.Equal(t, "target.txt", cmd.Target) // position 2
+		assert.Equal(t, "source.txt", cmd.Source) // arg 1
+		assert.Equal(t, "target.txt", cmd.Target) // arg 2
 	})
 
 	t.Run("repeated_positional", func(t *testing.T) {
