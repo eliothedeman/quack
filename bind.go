@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -12,31 +14,31 @@ import (
 var ()
 
 const (
-	helpTag       = "help"
-	defaultTag    = "default"
-	shortTag      = "short"
-	longTag       = "long"
-	ignoreTag     = "ignore"
-	positionalTag = "positional"
-	repeatedTag   = "repeated"
+	helpTag     = "help"
+	defaultTag  = "default"
+	shortTag    = "short"
+	longTag     = "long"
+	ignoreTag   = "ignore"
+	positionTag = "position"
+	repeatedTag = "repeated"
 )
 
 type option struct {
-	Name       string
-	Target     reflect.Value
-	Help       string
-	Default    string
-	Short      string
-	Long       string
-	Ignore     bool
-	Positional bool
-	Repeated   bool
+	Name     string
+	Target   reflect.Value
+	Help     string
+	Default  string
+	Short    string
+	Long     string
+	Ignore   bool
+	Position int  // 0 means not positional, >0 means positional argument at that index
+	Repeated bool
 }
 
 func (o *option) fmtBuffer(w io.Writer) {
 	fmt.Fprintf(
 		w,
-		" (%s target:%+v help:%s default:%s short:%s long:%s ignore:%t positional:%t repeated:%t)",
+		" (%s target:%+v help:%s default:%s short:%s long:%s ignore:%t position:%d repeated:%t)",
 		o.Name,
 		o.Target.Type(),
 		o.Help,
@@ -44,7 +46,7 @@ func (o *option) fmtBuffer(w io.Writer) {
 		o.Short,
 		o.Long,
 		o.Ignore,
-		o.Positional,
+		o.Position,
 		o.Repeated,
 	)
 }
@@ -59,8 +61,16 @@ func optionFromField(field reflect.StructField) option {
 	opt.Long = tags.Get(longTag)
 	opt.Default = tags.Get(defaultTag)
 	_, opt.Ignore = tags.Lookup(ignoreTag)
-	_, opt.Positional = tags.Lookup(positionalTag)
 	_, opt.Repeated = tags.Lookup(repeatedTag)
+
+	// Parse position tag
+	if posStr := tags.Get(positionTag); posStr != "" {
+		pos, err := strconv.Atoi(posStr)
+		if err != nil || pos < 1 {
+			panic(fmt.Sprintf("invalid position value '%s' for field %s: must be a positive integer", posStr, field.Name))
+		}
+		opt.Position = pos
+	}
 
 	return opt
 }
@@ -232,13 +242,18 @@ func (c *node) fromStruct(name string, target any) error {
 		opt.Target = f
 
 		// Separate positional and regular options
-		if opt.Positional {
+		if opt.Position > 0 {
 			c.positionalOptions = append(c.positionalOptions, opt)
 		} else {
 			c.options = append(c.options, opt)
 		}
 
 		return false
+	})
+
+	// Sort positional options by their position
+	sort.Slice(c.positionalOptions, func(i, j int) bool {
+		return c.positionalOptions[i].Position < c.positionalOptions[j].Position
 	})
 
 	return nil
