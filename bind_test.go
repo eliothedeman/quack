@@ -33,6 +33,28 @@ func sanatize(s string) string {
 	return s
 }
 
+type positionalCmd struct {
+	Source string `arg:"1"`
+	Target string `arg:"2"`
+}
+
+func (p *positionalCmd) Run(*cobra.Command, []string) {
+}
+
+type repeatedFlagCmd struct {
+	Files []string
+}
+
+func (r *repeatedFlagCmd) Run(*cobra.Command, []string) {
+}
+
+type repeatedPositionalCmd struct {
+	Files []string `arg:"1"`
+}
+
+func (r *repeatedPositionalCmd) Run(*cobra.Command, []string) {
+}
+
 func TestBindCobra(t *testing.T) {
 	simple := new(simpleCmd)
 	tests := []struct {
@@ -82,4 +104,70 @@ Flags:
 		})
 
 	}
+}
+
+type outOfOrderPositionalCmd struct {
+	Target string `arg:"2"`
+	Source string `arg:"1"`
+}
+
+func (o *outOfOrderPositionalCmd) Run(*cobra.Command, []string) {
+}
+
+func TestPositionalArgs(t *testing.T) {
+	t.Run("basic_positional", func(t *testing.T) {
+		cmd := new(positionalCmd)
+		cobraCmd, err := BindCobra("copy", cmd)
+		assert.Nil(t, err)
+		assert.NotNil(t, cobraCmd)
+
+		// Simulate running the command with positional args
+		cobraCmd.SetArgs([]string{"file1.txt", "file2.txt"})
+		err = cobraCmd.Execute()
+		assert.Nil(t, err)
+		assert.Equal(t, "file1.txt", cmd.Source)
+		assert.Equal(t, "file2.txt", cmd.Target)
+	})
+
+	t.Run("out_of_order_positional", func(t *testing.T) {
+		cmd := new(outOfOrderPositionalCmd)
+		cobraCmd, err := BindCobra("copy", cmd)
+		assert.Nil(t, err)
+		assert.NotNil(t, cobraCmd)
+
+		// Verify that arg positions are respected, not field order
+		cobraCmd.SetArgs([]string{"source.txt", "target.txt"})
+		err = cobraCmd.Execute()
+		assert.Nil(t, err)
+		assert.Equal(t, "source.txt", cmd.Source) // arg 1
+		assert.Equal(t, "target.txt", cmd.Target) // arg 2
+	})
+
+	t.Run("repeated_positional", func(t *testing.T) {
+		cmd := new(repeatedPositionalCmd)
+		cobraCmd, err := BindCobra("list", cmd)
+		assert.Nil(t, err)
+		assert.NotNil(t, cobraCmd)
+
+		// Simulate running the command with multiple positional args
+		cobraCmd.SetArgs([]string{"file1.txt", "file2.txt", "file3.txt"})
+		err = cobraCmd.Execute()
+		assert.Nil(t, err)
+		assert.Equal(t, []string{"file1.txt", "file2.txt", "file3.txt"}, cmd.Files)
+	})
+}
+
+func TestRepeatedFlags(t *testing.T) {
+	t.Run("repeated_flag", func(t *testing.T) {
+		cmd := new(repeatedFlagCmd)
+		cobraCmd, err := BindCobra("process", cmd)
+		assert.Nil(t, err)
+		assert.NotNil(t, cobraCmd)
+
+		// Simulate running the command with repeated flags
+		cobraCmd.SetArgs([]string{"--files", "file1.txt", "--files", "file2.txt"})
+		err = cobraCmd.Execute()
+		assert.Nil(t, err)
+		assert.Equal(t, []string{"file1.txt", "file2.txt"}, cmd.Files)
+	})
 }

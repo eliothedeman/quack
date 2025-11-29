@@ -1,6 +1,7 @@
 package quack
 
 import (
+	"fmt"
 	"log"
 	"reflect"
 	"strconv"
@@ -34,6 +35,71 @@ func (o *option) setFlag(fs *pflag.FlagSet) {
 	argName := o.Name
 	help := o.Help
 	v := o.Target
+
+	// Handle slice types (automatically repeated)
+	if o.Target.Kind() == reflect.Slice {
+		elemType := o.Target.Type().Elem()
+		switch elemType.Kind() {
+		case reflect.String:
+			if hasShort {
+				fs.StringSliceVarP(rawAddr[[]string](v), argName, short, nil, help)
+			} else {
+				fs.StringSliceVar(rawAddr[[]string](v), argName, nil, help)
+			}
+			return
+		case reflect.Int:
+			if hasShort {
+				fs.IntSliceVarP(rawAddr[[]int](v), argName, short, nil, help)
+			} else {
+				fs.IntSliceVar(rawAddr[[]int](v), argName, nil, help)
+			}
+			return
+		case reflect.Int64:
+			if hasShort {
+				fs.Int64SliceVarP(rawAddr[[]int64](v), argName, short, nil, help)
+			} else {
+				fs.Int64SliceVar(rawAddr[[]int64](v), argName, nil, help)
+			}
+			return
+		case reflect.Int32:
+			if hasShort {
+				fs.Int32SliceVarP(rawAddr[[]int32](v), argName, short, nil, help)
+			} else {
+				fs.Int32SliceVar(rawAddr[[]int32](v), argName, nil, help)
+			}
+			return
+		case reflect.Uint:
+			if hasShort {
+				fs.UintSliceVarP(rawAddr[[]uint](v), argName, short, nil, help)
+			} else {
+				fs.UintSliceVar(rawAddr[[]uint](v), argName, nil, help)
+			}
+			return
+		case reflect.Float32:
+			if hasShort {
+				fs.Float32SliceVarP(rawAddr[[]float32](v), argName, short, nil, help)
+			} else {
+				fs.Float32SliceVar(rawAddr[[]float32](v), argName, nil, help)
+			}
+			return
+		case reflect.Float64:
+			if hasShort {
+				fs.Float64SliceVarP(rawAddr[[]float64](v), argName, short, nil, help)
+			} else {
+				fs.Float64SliceVar(rawAddr[[]float64](v), argName, nil, help)
+			}
+			return
+		case reflect.Bool:
+			if hasShort {
+				fs.BoolSliceVarP(rawAddr[[]bool](v), argName, short, nil, help)
+			} else {
+				fs.BoolSliceVar(rawAddr[[]bool](v), argName, nil, help)
+			}
+			return
+		default:
+			log.Panicf("Unable to handle slice type for repeated flag: %v", elemType.Kind())
+		}
+	}
 
 	switch o.Target.Kind() {
 	case reflect.Bool:
@@ -163,4 +229,104 @@ func (o *option) setFlag(fs *pflag.FlagSet) {
 	default:
 		log.Panicf("Unable to handle type set flags for %v", o.Target)
 	}
+}
+
+// parseValue parses a string value and assigns it to the target field
+func (o *option) parseValue(value string) error {
+	v := o.Target
+	switch v.Kind() {
+	case reflect.String:
+		v.SetString(value)
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		// Handle time.Duration separately
+		if v.Type() == reflect.TypeOf(time.Duration(0)) {
+			d, err := time.ParseDuration(value)
+			if err != nil {
+				return fmt.Errorf("invalid duration: %w", err)
+			}
+			v.SetInt(int64(d))
+		} else {
+			i, err := strconv.ParseInt(value, 10, 64)
+			if err != nil {
+				return fmt.Errorf("invalid integer: %w", err)
+			}
+			v.SetInt(i)
+		}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		u, err := strconv.ParseUint(value, 10, 64)
+		if err != nil {
+			return fmt.Errorf("invalid unsigned integer: %w", err)
+		}
+		v.SetUint(u)
+	case reflect.Float32, reflect.Float64:
+		f, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return fmt.Errorf("invalid float: %w", err)
+		}
+		v.SetFloat(f)
+	case reflect.Bool:
+		b, err := strconv.ParseBool(value)
+		if err != nil {
+			return fmt.Errorf("invalid boolean: %w", err)
+		}
+		v.SetBool(b)
+	default:
+		return fmt.Errorf("unsupported type for positional argument: %v", v.Kind())
+	}
+	return nil
+}
+
+// appendValue appends a value to a slice field (for repeated arguments)
+func (o *option) appendValue(value string) error {
+	v := o.Target
+	if v.Kind() != reflect.Slice {
+		return fmt.Errorf("repeated argument must be a slice, got %v", v.Kind())
+	}
+
+	elemType := v.Type().Elem()
+	elem := reflect.New(elemType).Elem()
+
+	// Parse the value into the element
+	switch elemType.Kind() {
+	case reflect.String:
+		elem.SetString(value)
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		if elemType == reflect.TypeOf(time.Duration(0)) {
+			d, err := time.ParseDuration(value)
+			if err != nil {
+				return fmt.Errorf("invalid duration: %w", err)
+			}
+			elem.SetInt(int64(d))
+		} else {
+			i, err := strconv.ParseInt(value, 10, 64)
+			if err != nil {
+				return fmt.Errorf("invalid integer: %w", err)
+			}
+			elem.SetInt(i)
+		}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		u, err := strconv.ParseUint(value, 10, 64)
+		if err != nil {
+			return fmt.Errorf("invalid unsigned integer: %w", err)
+		}
+		elem.SetUint(u)
+	case reflect.Float32, reflect.Float64:
+		f, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return fmt.Errorf("invalid float: %w", err)
+		}
+		elem.SetFloat(f)
+	case reflect.Bool:
+		b, err := strconv.ParseBool(value)
+		if err != nil {
+			return fmt.Errorf("invalid boolean: %w", err)
+		}
+		elem.SetBool(b)
+	default:
+		return fmt.Errorf("unsupported element type for repeated argument: %v", elemType.Kind())
+	}
+
+	// Append the element to the slice
+	v.Set(reflect.Append(v, elem))
+	return nil
 }
