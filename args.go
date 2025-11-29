@@ -36,8 +36,8 @@ func (o *option) setFlag(fs *pflag.FlagSet) {
 	help := o.Help
 	v := o.Target
 
-	// Handle repeated (slice) arguments
-	if o.Repeated && o.Target.Kind() == reflect.Slice {
+	// Handle slice types (automatically repeated)
+	if o.Target.Kind() == reflect.Slice {
 		elemType := o.Target.Type().Elem()
 		switch elemType.Kind() {
 		case reflect.String:

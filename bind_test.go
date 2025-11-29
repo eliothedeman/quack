@@ -42,14 +42,14 @@ func (p *positionalCmd) Run(*cobra.Command, []string) {
 }
 
 type repeatedFlagCmd struct {
-	Files []string `repeated:""`
+	Files []string
 }
 
 func (r *repeatedFlagCmd) Run(*cobra.Command, []string) {
 }
 
 type repeatedPositionalCmd struct {
-	Files []string `position:"1" repeated:""`
+	Files []string `position:"1"`
 }
 
 func (r *repeatedPositionalCmd) Run(*cobra.Command, []string) {

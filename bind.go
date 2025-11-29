@@ -133,7 +133,8 @@ func (c *node) parsePositionalArgs(args []string) error {
 			continue
 		}
 
-		if opt.Repeated {
+		// Check if this is a slice type (repeated argument)
+		if opt.Target.Kind() == reflect.Slice {
 			// Consume all remaining arguments
 			for argIndex < len(args) {
 				if err := opt.appendValue(args[argIndex]); err != nil {
