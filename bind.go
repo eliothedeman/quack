@@ -12,27 +12,31 @@ import (
 var ()
 
 const (
-	helpTag    = "help"
-	defaultTag = "default"
-	shortTag   = "short"
-	longTag    = "long"
-	ignoreTag  = "ignore"
+	helpTag       = "help"
+	defaultTag    = "default"
+	shortTag      = "short"
+	longTag       = "long"
+	ignoreTag     = "ignore"
+	positionalTag = "positional"
+	repeatedTag   = "repeated"
 )
 
 type option struct {
-	Name    string
-	Target  reflect.Value
-	Help    string
-	Default string
-	Short   string
-	Long    string
-	Ignore  bool
+	Name       string
+	Target     reflect.Value
+	Help       string
+	Default    string
+	Short      string
+	Long       string
+	Ignore     bool
+	Positional bool
+	Repeated   bool
 }
 
 func (o *option) fmtBuffer(w io.Writer) {
 	fmt.Fprintf(
 		w,
-		" (%s target:%+v help:%s default:%s short:%s long:%s ignore:%t)",
+		" (%s target:%+v help:%s default:%s short:%s long:%s ignore:%t positional:%t repeated:%t)",
 		o.Name,
 		o.Target.Type(),
 		o.Help,
@@ -40,6 +44,8 @@ func (o *option) fmtBuffer(w io.Writer) {
 		o.Short,
 		o.Long,
 		o.Ignore,
+		o.Positional,
+		o.Repeated,
 	)
 }
 
@@ -53,18 +59,21 @@ func optionFromField(field reflect.StructField) option {
 	opt.Long = tags.Get(longTag)
 	opt.Default = tags.Get(defaultTag)
 	_, opt.Ignore = tags.Lookup(ignoreTag)
+	_, opt.Positional = tags.Lookup(positionalTag)
+	_, opt.Repeated = tags.Lookup(repeatedTag)
 
 	return opt
 }
 
 // node is a tree structure of commands that binds a structure to an abstract tree for cli applications.
 type node struct {
-	name        string
-	long        string
-	short       string
-	run         func(*cobra.Command, []string)
-	options     []option
-	subcommands []*node
+	name              string
+	long              string
+	short             string
+	run               func(*cobra.Command, []string)
+	options           []option
+	positionalOptions []option
+	subcommands       []*node
 }
 
 func (c *node) toCobra() *cobra.Command {
@@ -81,8 +90,56 @@ func (c *node) toCobra() *cobra.Command {
 	for _, s := range c.subcommands {
 		cmd.AddCommand(s.toCobra())
 	}
-	cmd.Run = c.run
+
+	// Wrap the run function to handle positional arguments
+	if c.run != nil {
+		originalRun := c.run
+		cmd.Run = func(cobraCmd *cobra.Command, args []string) {
+			// Parse positional arguments
+			if err := c.parsePositionalArgs(args); err != nil {
+				cobraCmd.PrintErr(err)
+				return
+			}
+			originalRun(cobraCmd, args)
+		}
+	}
+
 	return cmd
+}
+
+// parsePositionalArgs parses positional arguments and assigns them to the appropriate fields
+func (c *node) parsePositionalArgs(args []string) error {
+	argIndex := 0
+	for _, opt := range c.positionalOptions {
+		if argIndex >= len(args) {
+			// Not enough arguments provided
+			if opt.Default == "" {
+				return fmt.Errorf("missing required positional argument: %s", opt.Name)
+			}
+			// Use default value
+			if err := opt.parseValue(opt.Default); err != nil {
+				return fmt.Errorf("failed to parse default value for %s: %w", opt.Name, err)
+			}
+			continue
+		}
+
+		if opt.Repeated {
+			// Consume all remaining arguments
+			for argIndex < len(args) {
+				if err := opt.appendValue(args[argIndex]); err != nil {
+					return fmt.Errorf("failed to parse positional argument %s: %w", opt.Name, err)
+				}
+				argIndex++
+			}
+		} else {
+			// Single positional argument
+			if err := opt.parseValue(args[argIndex]); err != nil {
+				return fmt.Errorf("failed to parse positional argument %s: %w", opt.Name, err)
+			}
+			argIndex++
+		}
+	}
+	return nil
 }
 
 func (c *node) fmtBuffer(depth int, w io.Writer) {
@@ -173,7 +230,13 @@ func (c *node) fromStruct(name string, target any) error {
 		}
 		opt := optionFromField(sf)
 		opt.Target = f
-		c.options = append(c.options, opt)
+
+		// Separate positional and regular options
+		if opt.Positional {
+			c.positionalOptions = append(c.positionalOptions, opt)
+		} else {
+			c.options = append(c.options, opt)
+		}
 
 		return false
 	})

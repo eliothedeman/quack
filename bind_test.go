@@ -33,6 +33,28 @@ func sanatize(s string) string {
 	return s
 }
 
+type positionalCmd struct {
+	Source string `positional:""`
+	Target string `positional:""`
+}
+
+func (p *positionalCmd) Run(*cobra.Command, []string) {
+}
+
+type repeatedFlagCmd struct {
+	Files []string `repeated:""`
+}
+
+func (r *repeatedFlagCmd) Run(*cobra.Command, []string) {
+}
+
+type repeatedPositionalCmd struct {
+	Files []string `positional:"" repeated:""`
+}
+
+func (r *repeatedPositionalCmd) Run(*cobra.Command, []string) {
+}
+
 func TestBindCobra(t *testing.T) {
 	simple := new(simpleCmd)
 	tests := []struct {
@@ -82,4 +104,48 @@ Flags:
 		})
 
 	}
+}
+
+func TestPositionalArgs(t *testing.T) {
+	t.Run("basic_positional", func(t *testing.T) {
+		cmd := new(positionalCmd)
+		cobraCmd, err := BindCobra("copy", cmd)
+		assert.Nil(t, err)
+		assert.NotNil(t, cobraCmd)
+
+		// Simulate running the command with positional args
+		cobraCmd.SetArgs([]string{"file1.txt", "file2.txt"})
+		err = cobraCmd.Execute()
+		assert.Nil(t, err)
+		assert.Equal(t, "file1.txt", cmd.Source)
+		assert.Equal(t, "file2.txt", cmd.Target)
+	})
+
+	t.Run("repeated_positional", func(t *testing.T) {
+		cmd := new(repeatedPositionalCmd)
+		cobraCmd, err := BindCobra("list", cmd)
+		assert.Nil(t, err)
+		assert.NotNil(t, cobraCmd)
+
+		// Simulate running the command with multiple positional args
+		cobraCmd.SetArgs([]string{"file1.txt", "file2.txt", "file3.txt"})
+		err = cobraCmd.Execute()
+		assert.Nil(t, err)
+		assert.Equal(t, []string{"file1.txt", "file2.txt", "file3.txt"}, cmd.Files)
+	})
+}
+
+func TestRepeatedFlags(t *testing.T) {
+	t.Run("repeated_flag", func(t *testing.T) {
+		cmd := new(repeatedFlagCmd)
+		cobraCmd, err := BindCobra("process", cmd)
+		assert.Nil(t, err)
+		assert.NotNil(t, cobraCmd)
+
+		// Simulate running the command with repeated flags
+		cobraCmd.SetArgs([]string{"--files", "file1.txt", "--files", "file2.txt"})
+		err = cobraCmd.Execute()
+		assert.Nil(t, err)
+		assert.Equal(t, []string{"file1.txt", "file2.txt"}, cmd.Files)
+	})
 }
