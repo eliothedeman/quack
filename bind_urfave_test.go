@@ -1,11 +1,11 @@
 package quack
 
 import (
-	"os"
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 type simpleUrfaveCmd struct {
@@ -46,8 +46,8 @@ type urfaveContextCmd struct {
 	Name string
 }
 
-func (u *urfaveContextCmd) Run(ctx *cli.Context) error {
-	// Can access urfave-specific context here
+func (u *urfaveContextCmd) Run(ctx context.Context, cmd *cli.Command) error {
+	// Can access urfave-specific command here
 	return nil
 }
 
@@ -97,7 +97,7 @@ func TestUrfavePositionalArgs(t *testing.T) {
 		assert.NotNil(t, app)
 
 		// Simulate running the command with positional args
-		err = app.Run([]string{"copy", "file1.txt", "file2.txt"})
+		err = app.Run(context.Background(), []string{"copy", "file1.txt", "file2.txt"})
 		assert.Nil(t, err)
 		assert.Equal(t, "file1.txt", cmd.Source)
 		assert.Equal(t, "file2.txt", cmd.Target)
@@ -110,7 +110,7 @@ func TestUrfavePositionalArgs(t *testing.T) {
 		assert.NotNil(t, app)
 
 		// Simulate running the command with multiple positional args
-		err = app.Run([]string{"list", "file1.txt", "file2.txt", "file3.txt"})
+		err = app.Run(context.Background(), []string{"list", "file1.txt", "file2.txt", "file3.txt"})
 		assert.Nil(t, err)
 		assert.Equal(t, []string{"file1.txt", "file2.txt", "file3.txt"}, cmd.Files)
 	})
@@ -124,7 +124,7 @@ func TestUrfaveRepeatedFlags(t *testing.T) {
 		assert.NotNil(t, app)
 
 		// Simulate running the command with repeated flags
-		err = app.Run([]string{"process", "--files", "file1.txt", "--files", "file2.txt"})
+		err = app.Run(context.Background(), []string{"process", "--files", "file1.txt", "--files", "file2.txt"})
 		assert.Nil(t, err)
 		assert.Equal(t, []string{"file1.txt", "file2.txt"}, cmd.Files)
 	})
@@ -138,7 +138,7 @@ func TestUrfaveCommand(t *testing.T) {
 		assert.NotNil(t, app)
 
 		// Simulate running the command
-		err = app.Run([]string{"test", "--name", "testname"})
+		err = app.Run(context.Background(), []string{"test", "--name", "testname"})
 		assert.Nil(t, err)
 		assert.Equal(t, "testname", cmd.Name)
 	})
@@ -188,11 +188,3 @@ func TestUrfaveSubcommands(t *testing.T) {
 	})
 }
 
-// Helper to run app without os.Exit
-func runApp(app *cli.App, args []string) error {
-	// Save original os.Args
-	oldArgs := os.Args
-	defer func() { os.Args = oldArgs }()
-
-	return app.Run(args)
-}

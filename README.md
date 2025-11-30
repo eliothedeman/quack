@@ -32,30 +32,30 @@ with existing CLIs that use this framework.
 cmd, err := quack.BindCobra("myapp", new(MyCommand))
 ```
 
-### Integration with [urfave/cli](https://github.com/urfave/cli) v2
-The `BindUrfave` API creates a `cli.App` from the given structure, providing seamless integration
-with urfave/cli v2.
+### Integration with [urfave/cli](https://github.com/urfave/cli) v3
+The `BindUrfave` API creates a `cli.Command` from the given structure, providing seamless integration
+with urfave/cli v3.
 
 ```go
-app, err := quack.BindUrfave("myapp", new(MyCommand))
+cmd, err := quack.BindUrfave("myapp", new(MyCommand))
 ```
 
-For urfave-specific features like accessing `*cli.Context`, your command can implement the `UrfaveCommand` interface:
+For urfave-specific features like accessing the `*cli.Command`, your command can implement the `UrfaveCommand` interface:
 
 ```go
 type MyCmd struct {
     Name string
 }
 
-func (m *MyCmd) Run(ctx *cli.Context) error {
-    // Access urfave-specific context features
-    fmt.Println(ctx.App.Name)
+func (m *MyCmd) Run(ctx context.Context, cmd *cli.Command) error {
+    // Access urfave-specific command features
+    fmt.Println(cmd.Name)
     return nil
 }
 ```
 
 ### Other framework support
-Both Cobra and urfave/cli are now fully supported! Feel free to file an issue if you'd like support for additional frameworks.
+Both Cobra and urfave/cli v3 are now fully supported! Feel free to file an issue if you'd like support for additional frameworks.
 
 ## Examples
 

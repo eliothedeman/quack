@@ -1,74 +1,12 @@
 package quack
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
-
-// toUrfaveApp converts a node to a *cli.App
-func (c *node) toUrfaveApp() *cli.App {
-	app := &cli.App{
-		Name:  c.name,
-		Usage: c.short,
-	}
-	if c.long != "" {
-		app.Description = c.long
-	}
-
-	// Set flags
-	app.Flags = c.toUrfaveFlags()
-
-	// Set commands
-	for _, s := range c.subcommands {
-		app.Commands = append(app.Commands, s.toUrfaveCommand())
-	}
-
-	// Set action
-	if c.run != nil {
-		// Check if target implements UrfaveCommand
-		// We need to check if it implements the interface with *cli.Context parameter
-		type urfaveCommandWithContext interface {
-			Run(ctx *cli.Context) error
-		}
-
-		if urfaveCmd, ok := c.target.(urfaveCommandWithContext); ok {
-			app.Action = func(ctx *cli.Context) error {
-				// Parse flags from context into struct fields
-				if err := c.parseUrfaveFlags(ctx); err != nil {
-					return err
-				}
-				// Parse positional arguments from ctx.Args()
-				args := ctx.Args().Slice()
-				if err := c.parsePositionalArgs(args); err != nil {
-					return err
-				}
-				// Call the UrfaveCommand's Run method directly
-				return urfaveCmd.Run(ctx)
-			}
-		} else {
-			// Use the standard run function for other command types
-			originalRun := c.run
-			app.Action = func(ctx *cli.Context) error {
-				// Parse flags from context into struct fields
-				if err := c.parseUrfaveFlags(ctx); err != nil {
-					return err
-				}
-				// Parse positional arguments from ctx.Args()
-				args := ctx.Args().Slice()
-				if err := c.parsePositionalArgs(args); err != nil {
-					return err
-				}
-				// Call the original run function with nil cobra command since we're in urfave context
-				originalRun(nil, args)
-				return nil
-			}
-		}
-	}
-
-	return app
-}
 
 // toUrfaveCommand converts a node to a *cli.Command
 func (c *node) toUrfaveCommand() *cli.Command {
@@ -85,41 +23,40 @@ func (c *node) toUrfaveCommand() *cli.Command {
 
 	// Set subcommands
 	for _, s := range c.subcommands {
-		cmd.Subcommands = append(cmd.Subcommands, s.toUrfaveCommand())
+		cmd.Commands = append(cmd.Commands, s.toUrfaveCommand())
 	}
 
 	// Set action
 	if c.run != nil {
-		// Check if target implements UrfaveCommand
-		// We need to check if it implements the interface with *cli.Context parameter
-		type urfaveCommandWithContext interface {
-			Run(ctx *cli.Context) error
+		// Check if target implements UrfaveCommand with v3 signature
+		type urfaveCommandV3 interface {
+			Run(ctx context.Context, cmd *cli.Command) error
 		}
 
-		if urfaveCmd, ok := c.target.(urfaveCommandWithContext); ok {
-			cmd.Action = func(ctx *cli.Context) error {
-				// Parse flags from context into struct fields
-				if err := c.parseUrfaveFlags(ctx); err != nil {
+		if urfaveCmd, ok := c.target.(urfaveCommandV3); ok {
+			cmd.Action = func(ctx context.Context, cliCmd *cli.Command) error {
+				// Parse flags from command into struct fields
+				if err := c.parseUrfaveFlags(cliCmd); err != nil {
 					return err
 				}
-				// Parse positional arguments from ctx.Args()
-				args := ctx.Args().Slice()
+				// Parse positional arguments
+				args := cliCmd.Args().Slice()
 				if err := c.parsePositionalArgs(args); err != nil {
 					return err
 				}
 				// Call the UrfaveCommand's Run method directly
-				return urfaveCmd.Run(ctx)
+				return urfaveCmd.Run(ctx, cliCmd)
 			}
 		} else {
 			// Use the standard run function for other command types
 			originalRun := c.run
-			cmd.Action = func(ctx *cli.Context) error {
-				// Parse flags from context into struct fields
-				if err := c.parseUrfaveFlags(ctx); err != nil {
+			cmd.Action = func(ctx context.Context, cliCmd *cli.Command) error {
+				// Parse flags from command into struct fields
+				if err := c.parseUrfaveFlags(cliCmd); err != nil {
 					return err
 				}
-				// Parse positional arguments from ctx.Args()
-				args := ctx.Args().Slice()
+				// Parse positional arguments
+				args := cliCmd.Args().Slice()
 				if err := c.parsePositionalArgs(args); err != nil {
 					return err
 				}
@@ -184,7 +121,7 @@ func (o *option) toUrfaveFlag() cli.Flag {
 				Usage:   usage,
 			}
 		case reflect.Uint:
-			return &cli.Uint64SliceFlag{
+			return &cli.UintSliceFlag{
 				Name:    name,
 				Aliases: aliases,
 				Usage:   usage,
@@ -283,8 +220,8 @@ func (o *option) toUrfaveFlag() cli.Flag {
 	}
 }
 
-// parseUrfaveFlags reads flag values from the cli.Context and assigns them to the struct fields
-func (c *node) parseUrfaveFlags(ctx *cli.Context) error {
+// parseUrfaveFlags reads flag values from the cli.Command and assigns them to the struct fields
+func (c *node) parseUrfaveFlags(cmd *cli.Command) error {
 	for _, opt := range c.options {
 		if opt.Ignore {
 			continue
@@ -298,36 +235,32 @@ func (c *node) parseUrfaveFlags(ctx *cli.Context) error {
 			elemType := v.Type().Elem()
 			switch elemType.Kind() {
 			case reflect.String:
-				values := ctx.StringSlice(name)
+				values := cmd.StringSlice(name)
 				if values != nil {
 					v.Set(reflect.ValueOf(values))
 				}
 			case reflect.Int:
-				values := ctx.IntSlice(name)
+				values := cmd.IntSlice(name)
 				if values != nil {
 					v.Set(reflect.ValueOf(values))
 				}
 			case reflect.Int64:
-				values := ctx.Int64Slice(name)
+				values := cmd.Int64Slice(name)
 				if values != nil {
 					v.Set(reflect.ValueOf(values))
 				}
-			case reflect.Uint, reflect.Uint64:
-				values := ctx.Uint64Slice(name)
+			case reflect.Uint:
+				values := cmd.UintSlice(name)
 				if values != nil {
-					// Convert []uint64 to []uint if needed
-					if elemType.Kind() == reflect.Uint {
-						uintSlice := make([]uint, len(values))
-						for i, val := range values {
-							uintSlice[i] = uint(val)
-						}
-						v.Set(reflect.ValueOf(uintSlice))
-					} else {
-						v.Set(reflect.ValueOf(values))
-					}
+					v.Set(reflect.ValueOf(values))
+				}
+			case reflect.Uint64:
+				values := cmd.Uint64Slice(name)
+				if values != nil {
+					v.Set(reflect.ValueOf(values))
 				}
 			case reflect.Float64:
-				values := ctx.Float64Slice(name)
+				values := cmd.Float64Slice(name)
 				if values != nil {
 					v.Set(reflect.ValueOf(values))
 				}
@@ -340,19 +273,19 @@ func (c *node) parseUrfaveFlags(ctx *cli.Context) error {
 		// Handle non-slice types
 		switch v.Kind() {
 		case reflect.Bool:
-			v.SetBool(ctx.Bool(name))
+			v.SetBool(cmd.Bool(name))
 		case reflect.Int:
-			v.SetInt(int64(ctx.Int(name)))
+			v.SetInt(int64(cmd.Int(name)))
 		case reflect.Int64:
-			v.SetInt(ctx.Int64(name))
+			v.SetInt(cmd.Int64(name))
 		case reflect.Uint:
-			v.SetUint(uint64(ctx.Uint(name)))
+			v.SetUint(uint64(cmd.Uint(name)))
 		case reflect.Uint64:
-			v.SetUint(ctx.Uint64(name))
+			v.SetUint(cmd.Uint64(name))
 		case reflect.Float64:
-			v.SetFloat(ctx.Float64(name))
+			v.SetFloat(cmd.Float64(name))
 		case reflect.String:
-			v.SetString(ctx.String(name))
+			v.SetString(cmd.String(name))
 		default:
 			return fmt.Errorf("unsupported type for flag %s: %v", name, v.Kind())
 		}
@@ -360,21 +293,21 @@ func (c *node) parseUrfaveFlags(ctx *cli.Context) error {
 	return nil
 }
 
-// BindUrfave binds a structure to a *cli.App (and sub-commands)
-func BindUrfave(name string, root any) (*cli.App, error) {
+// BindUrfave binds a structure to a *cli.Command (and sub-commands)
+func BindUrfave(name string, root any) (*cli.Command, error) {
 	rn := new(node)
 	err := rn.fromStruct(name, root)
 	if err != nil {
 		return nil, err
 	}
-	return rn.toUrfaveApp(), nil
+	return rn.toUrfaveCommand(), nil
 }
 
 // MustBindUrfave will panic if BindUrfave returns an error
-func MustBindUrfave(name string, root any) *cli.App {
-	app, err := BindUrfave(name, root)
+func MustBindUrfave(name string, root any) *cli.Command {
+	cmd, err := BindUrfave(name, root)
 	if err != nil {
 		panic(err)
 	}
-	return app
+	return cmd
 }

@@ -212,10 +212,10 @@ func (c *node) fromStruct(name string, target any) error {
 	runMethod := targetValue.MethodByName("Run")
 	if runMethod.IsValid() {
 		methodType := runMethod.Type()
-		// Check if it matches the UrfaveCommand signature: Run(ctx *Something) error
-		// NumIn() == 1 means one parameter (the receiver is not counted for method values)
+		// Check if it matches the UrfaveCommand signature: Run(ctx, cmd) error
+		// NumIn() == 2 means two parameters (the receiver is not counted for method values)
 		// NumOut() == 1 means one return value
-		if methodType.NumIn() == 1 && methodType.NumOut() == 1 {
+		if methodType.NumIn() == 2 && methodType.NumOut() == 1 {
 			// Check if the return type is error
 			errorType := reflect.TypeOf((*error)(nil)).Elem()
 			if methodType.Out(0).Implements(errorType) {

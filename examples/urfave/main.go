@@ -1,29 +1,30 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/eliothedeman/quack"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
-// Simple command using UrfaveCommand interface for full cli.Context access
+// Simple command using UrfaveCommand interface for full cli.Command access
 type GreetCmd struct {
 	Name   string `short:"n" help:"Name to greet" default:"World"`
 	Formal bool   `short:"f" help:"Use formal greeting"`
 }
 
-func (g *GreetCmd) Run(ctx *cli.Context) error {
+func (g *GreetCmd) Run(ctx context.Context, cmd *cli.Command) error {
 	greeting := "Hello"
 	if g.Formal {
 		greeting = "Good day"
 	}
 
-	// Can access urfave-specific context features
+	// Can access urfave-specific command features
 	fmt.Printf("%s, %s!\n", greeting, g.Name)
-	fmt.Printf("App name from context: %s\n", ctx.App.Name)
+	fmt.Printf("Command name: %s\n", cmd.Name)
 	return nil
 }
 
@@ -55,12 +56,12 @@ func (r *Root) SubCommands() quack.Map {
 
 func main() {
 	root := &Root{}
-	app, err := quack.BindUrfave("example", root)
+	cmd, err := quack.BindUrfave("example", root)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err := app.Run(os.Args); err != nil {
+	if err := cmd.Run(context.Background(), os.Args); err != nil {
 		log.Fatal(err)
 	}
 }
