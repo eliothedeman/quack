@@ -84,6 +84,7 @@ type node struct {
 	options           []option
 	positionalOptions []option
 	subcommands       []*node
+	target            any // Store the original target for framework-specific handling
 }
 
 func (c *node) toCobra() *cobra.Command {
@@ -194,6 +195,7 @@ func (c *node) fromStruct(name string, target any) error {
 		)
 	}
 	c.name = name
+	c.target = target // Store the target for framework-specific handling
 
 	if helper, ok := target.(Helper); ok {
 		c.long = helper.Help()
@@ -201,6 +203,25 @@ func (c *node) fromStruct(name string, target any) error {
 	c.short = c.long
 	if sh, ok := target.(ShortHelper); ok {
 		c.short = sh.ShortHelp()
+	}
+
+	// Check if target has a Run method that might be UrfaveCommand
+	// We check this using reflection to avoid import dependencies
+	hasUrfaveRun := false
+	targetValue := reflect.ValueOf(target)
+	runMethod := targetValue.MethodByName("Run")
+	if runMethod.IsValid() {
+		methodType := runMethod.Type()
+		// Check if it matches the UrfaveCommand signature: Run(ctx, cmd) error
+		// NumIn() == 2 means two parameters (the receiver is not counted for method values)
+		// NumOut() == 1 means one return value
+		if methodType.NumIn() == 2 && methodType.NumOut() == 1 {
+			// Check if the return type is error
+			errorType := reflect.TypeOf((*error)(nil)).Elem()
+			if methodType.Out(0).Implements(errorType) {
+				hasUrfaveRun = true
+			}
+		}
 	}
 
 	switch target := target.(type) {
@@ -214,6 +235,12 @@ func (c *node) fromStruct(name string, target any) error {
 		}
 	case CobraCommand:
 		c.run = target.Run
+	case UrfaveCommand:
+		// UrfaveCommand is handled differently in urfave binding
+		// We set a placeholder run function here
+		c.run = func(*cobra.Command, []string) {
+			// This will be overridden in toUrfaveApp/toUrfaveCommand
+		}
 	case Group:
 		c.run = func(c *cobra.Command, s []string) {
 			c.Help()
@@ -226,7 +253,14 @@ func (c *node) fromStruct(name string, target any) error {
 			c.subcommands = append(c.subcommands, cn)
 		}
 	default:
-		return fmt.Errorf("%w. must impliment quack.(Command|SimpleCommand|Group|SubCommander)", ErrNotACommand)
+		// Check if it implements UrfaveCommand pattern via reflection
+		if hasUrfaveRun {
+			c.run = func(*cobra.Command, []string) {
+				// This will be overridden in toUrfaveApp/toUrfaveCommand
+			}
+		} else {
+			return fmt.Errorf("%w. must impliment quack.(Command|SimpleCommand|Group|SubCommander)", ErrNotACommand)
+		}
 	}
 
 	v.FieldByNameFunc(func(name string) bool {

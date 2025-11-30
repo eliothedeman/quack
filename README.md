@@ -20,14 +20,42 @@ Then quack is for you.
 - 🔁 **Repeated arguments** - Slices are automatically treated as variadic
 - 🏷️ **Named options** - Support for short (`-f`) and long (`--file`) flags
 - 🪆 **Nested sub-commands** - Easy command hierarchies
-- 🐍 **Cobra integration** - Built on top of [spf13/cobra](https://github.com/spf13/cobra)
+- 🔌 **Multiple frameworks** - Works with [Cobra](https://github.com/spf13/cobra) and [urfave/cli](https://github.com/urfave/cli) v2
 
-## Integration with [spf13/cobra](https://github.com/spf13/cobra)
-The Bind api creates a `cobra.Command` from the given structure. This allows for easy integration
-with existing cli's that use this framework.
+## Framework Support
 
-## Other framework support
-Supporting other frameworks like [urfave/cli](https://github.com/urfave/cli) would be pretty easy. Feel free to file an issue with your framework of choice if you want it added.
+### Integration with [spf13/cobra](https://github.com/spf13/cobra)
+The `BindCobra` API creates a `cobra.Command` from the given structure. This allows for easy integration
+with existing CLIs that use this framework.
+
+```go
+cmd, err := quack.BindCobra("myapp", new(MyCommand))
+```
+
+### Integration with [urfave/cli](https://github.com/urfave/cli) v3
+The `BindUrfave` API creates a `cli.Command` from the given structure, providing seamless integration
+with urfave/cli v3.
+
+```go
+cmd, err := quack.BindUrfave("myapp", new(MyCommand))
+```
+
+For urfave-specific features like accessing the `*cli.Command`, your command can implement the `UrfaveCommand` interface:
+
+```go
+type MyCmd struct {
+    Name string
+}
+
+func (m *MyCmd) Run(ctx context.Context, cmd *cli.Command) error {
+    // Access urfave-specific command features
+    fmt.Println(cmd.Name)
+    return nil
+}
+```
+
+### Other framework support
+Both Cobra and urfave/cli v3 are now fully supported! Feel free to file an issue if you'd like support for additional frameworks.
 
 ## Examples
 

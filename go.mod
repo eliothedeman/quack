@@ -1,12 +1,15 @@
 module github.com/eliothedeman/quack
 
-go 1.18
+go 1.22
+
+toolchain go1.24.7
 
 require (
 	github.com/iancoleman/strcase v0.3.0
-	github.com/spf13/cobra v1.8.0
-	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.8.4
+	github.com/spf13/cobra v1.10.1
+	github.com/spf13/pflag v1.0.10
+	github.com/stretchr/testify v1.11.1
+	github.com/urfave/cli/v3 v3.6.1
 )
 
 require (

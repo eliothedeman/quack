@@ -29,6 +29,13 @@ type CobraCommand interface {
 	Run(cmd *cobra.Command, args []string)
 }
 
+// UrfaveCommand is a command that implements the urfave/cli v3 ActionFunc interface.
+// This is useful when you need access to the cli.Command for urfave/cli specific features.
+// Note: This interface is defined here but only used when binding to urfave/cli.
+type UrfaveCommand interface {
+	Run(ctx interface{}, cmd interface{}) error // Using interface{} to avoid importing urfave/cli
+}
+
 // Map to cut down on repetitive use of map[string]any
 type Map = map[string]any
 
