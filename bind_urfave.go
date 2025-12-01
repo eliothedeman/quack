@@ -44,6 +44,10 @@ func (c *node) toUrfaveCommand() *cli.Command {
 				if err := c.parsePositionalArgs(args); err != nil {
 					return err
 				}
+				// Validate options if command doesn't implement Validator
+				if err := c.validateOptions(); err != nil {
+					return err
+				}
 				// Call the UrfaveCommand's Run method directly
 				return urfaveCmd.Run(ctx, cliCmd)
 			}
@@ -58,6 +62,10 @@ func (c *node) toUrfaveCommand() *cli.Command {
 				// Parse positional arguments
 				args := cliCmd.Args().Slice()
 				if err := c.parsePositionalArgs(args); err != nil {
+					return err
+				}
+				// Validate options if command doesn't implement Validator
+				if err := c.validateOptions(); err != nil {
 					return err
 				}
 				// Call the original run function with nil cobra command since we're in urfave context

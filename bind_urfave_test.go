@@ -2,6 +2,7 @@ package quack
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -185,6 +186,75 @@ func TestUrfaveSubcommands(t *testing.T) {
 		assert.NotNil(t, app)
 		assert.Len(t, app.Commands, 1)
 		assert.Equal(t, "sub", app.Commands[0].Name)
+	})
+}
+
+// Test option validation
+
+// validatingUrfaveOption is a custom type that implements Validator
+type validatingUrfaveOption string
+
+func (v validatingUrfaveOption) Validate() error {
+	if v == "invalid" {
+		return fmt.Errorf("option value is invalid")
+	}
+	return nil
+}
+
+// cmdWithValidatingUrfaveOption has an option that implements Validator but the command doesn't
+type cmdWithValidatingUrfaveOption struct {
+	Option validatingUrfaveOption
+}
+
+func (c *cmdWithValidatingUrfaveOption) Run([]string) {
+}
+
+// cmdWithValidatingUrfaveOptionAndCommandValidator has both option and command validation
+type cmdWithValidatingUrfaveOptionAndCommandValidator struct {
+	Option validatingUrfaveOption
+}
+
+func (c *cmdWithValidatingUrfaveOptionAndCommandValidator) Run([]string) {
+}
+
+func (c *cmdWithValidatingUrfaveOptionAndCommandValidator) Validate() error {
+	// Command level validation - options should not be validated individually
+	return fmt.Errorf("command validation error")
+}
+
+func TestUrfaveOptionValidation(t *testing.T) {
+	t.Run("valid_option", func(t *testing.T) {
+		cmd := &cmdWithValidatingUrfaveOption{Option: "valid"}
+		app, err := BindUrfave("test", cmd)
+		assert.Nil(t, err)
+		assert.NotNil(t, app)
+
+		err = app.Run(context.Background(), []string{"test", "--option", "valid"})
+		assert.Nil(t, err)
+	})
+
+	t.Run("invalid_option", func(t *testing.T) {
+		cmd := &cmdWithValidatingUrfaveOption{Option: "valid"}
+		app, err := BindUrfave("test", cmd)
+		assert.Nil(t, err)
+		assert.NotNil(t, app)
+
+		err = app.Run(context.Background(), []string{"test", "--option", "invalid"})
+		assert.NotNil(t, err)
+		assert.Contains(t, err.Error(), "validation failed for option")
+	})
+
+	t.Run("command_implements_validator_skips_option_validation", func(t *testing.T) {
+		cmd := &cmdWithValidatingUrfaveOptionAndCommandValidator{Option: "invalid"}
+		app, err := BindUrfave("test", cmd)
+		assert.Nil(t, err)
+		assert.NotNil(t, app)
+
+		// Even though option is "invalid", it should not be validated
+		// because the command itself implements Validator
+		err = app.Run(context.Background(), []string{"test", "--option", "invalid"})
+		// Should succeed without option validation error
+		assert.Nil(t, err)
 	})
 }
 
