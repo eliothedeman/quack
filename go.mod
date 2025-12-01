@@ -1,10 +1,11 @@
 module github.com/eliothedeman/quack
 
-go 1.22
+go 1.24.2
 
 toolchain go1.24.7
 
 require (
+	github.com/eliothedeman/check v0.2.0
 	github.com/iancoleman/strcase v0.3.0
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/pflag v1.0.10
