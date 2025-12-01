@@ -1,6 +1,7 @@
 package quack
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -169,5 +170,77 @@ func TestRepeatedFlags(t *testing.T) {
 		err = cobraCmd.Execute()
 		assert.Nil(t, err)
 		assert.Equal(t, []string{"file1.txt", "file2.txt"}, cmd.Files)
+	})
+}
+
+// Test option validation
+
+// validatingOption is a custom type that implements Validator
+type validatingOption string
+
+func (v validatingOption) Validate() error {
+	if v == "invalid" {
+		return fmt.Errorf("option value is invalid")
+	}
+	return nil
+}
+
+// cmdWithValidatingOption has an option that implements Validator but the command doesn't
+type cmdWithValidatingOption struct {
+	Option validatingOption
+}
+
+func (c *cmdWithValidatingOption) Run(*cobra.Command, []string) {
+}
+
+// cmdWithValidatingOptionAndCommandValidator has both option and command validation
+type cmdWithValidatingOptionAndCommandValidator struct {
+	Option validatingOption
+}
+
+func (c *cmdWithValidatingOptionAndCommandValidator) Run(*cobra.Command, []string) {
+}
+
+func (c *cmdWithValidatingOptionAndCommandValidator) Validate() error {
+	// Command level validation - options should not be validated individually
+	return fmt.Errorf("command validation error")
+}
+
+func TestOptionValidation(t *testing.T) {
+	t.Run("valid_option", func(t *testing.T) {
+		cmd := &cmdWithValidatingOption{Option: "valid"}
+		cobraCmd, err := BindCobra("test", cmd)
+		assert.Nil(t, err)
+		assert.NotNil(t, cobraCmd)
+
+		cobraCmd.SetArgs([]string{"--option", "valid"})
+		err = cobraCmd.Execute()
+		assert.Nil(t, err)
+	})
+
+	t.Run("invalid_option", func(t *testing.T) {
+		cmd := &cmdWithValidatingOption{Option: "valid"}
+		cobraCmd, err := BindCobra("test", cmd)
+		assert.Nil(t, err)
+		assert.NotNil(t, cobraCmd)
+
+		cobraCmd.SetArgs([]string{"--option", "invalid"})
+		err = cobraCmd.Execute()
+		assert.NotNil(t, err)
+		assert.Contains(t, err.Error(), "validation failed for option")
+	})
+
+	t.Run("command_implements_validator_skips_option_validation", func(t *testing.T) {
+		cmd := &cmdWithValidatingOptionAndCommandValidator{Option: "invalid"}
+		cobraCmd, err := BindCobra("test", cmd)
+		assert.Nil(t, err)
+		assert.NotNil(t, cobraCmd)
+
+		// Even though option is "invalid", it should not be validated
+		// because the command itself implements Validator
+		cobraCmd.SetArgs([]string{"--option", "invalid"})
+		err = cobraCmd.Execute()
+		// Should succeed without option validation error
+		assert.Nil(t, err)
 	})
 }

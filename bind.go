@@ -102,16 +102,20 @@ func (c *node) toCobra() *cobra.Command {
 		cmd.AddCommand(s.toCobra())
 	}
 
-	// Wrap the run function to handle positional arguments
+	// Wrap the run function to handle positional arguments and validation
 	if c.run != nil {
 		originalRun := c.run
-		cmd.Run = func(cobraCmd *cobra.Command, args []string) {
+		cmd.RunE = func(cobraCmd *cobra.Command, args []string) error {
 			// Parse positional arguments
 			if err := c.parsePositionalArgs(args); err != nil {
-				cobraCmd.PrintErr(err)
-				return
+				return err
+			}
+			// Validate options if command doesn't implement Validator
+			if err := c.validateOptions(); err != nil {
+				return err
 			}
 			originalRun(cobraCmd, args)
+			return nil
 		}
 	}
 
@@ -151,6 +155,35 @@ func (c *node) parsePositionalArgs(args []string) error {
 			argIndex++
 		}
 	}
+	return nil
+}
+
+// validateOptions validates individual options that implement the Validator interface
+// if the command itself doesn't implement Validator
+func (c *node) validateOptions() error {
+	// Check if the command target implements Validator
+	if _, ok := c.target.(Validator); ok {
+		// Command implements Validator, so we don't validate individual options
+		return nil
+	}
+
+	// Validate all options (both named and positional)
+	allOptions := append(c.options, c.positionalOptions...)
+	for _, opt := range allOptions {
+		if opt.Ignore {
+			continue
+		}
+
+		// Check if the option's value implements Validator
+		if opt.Target.CanInterface() {
+			if validator, ok := opt.Target.Interface().(Validator); ok {
+				if err := validator.Validate(); err != nil {
+					return fmt.Errorf("validation failed for option %s: %w", opt.Name, err)
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
